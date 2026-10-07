@@ -1,0 +1,1058 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Peta API MW Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: aplikasi peta berlatar putih — header + tab ikon menempel di atas; beranda = diagram jalur permintaan beranimasi + peta perjalanan nasabah; alur = langkah bergambar + matriks titik fungsi × aplikasi; aplikasi = matriks gelembung aplikasi × alur */
+:root{
+  --bg:#FFFFFF; --card:#FFFFFF; --soft:#F5F7FA; --soft-2:#EEF1F6;
+  --ink:#132036; --ink-2:#4B566B; --ink-3:#7C8699;
+  --line:#E5E9F0; --line-2:#D0D7E2;
+  --brand:#1F3C88; --brand-2:#2E56C2; --brand-soft:#EAF0FC;
+  --baru:#12875F; --baru-soft:#E1F4EB; --baru-ink:#0B5B40;
+  --lama:#E06B1F; --lama-soft:#FDEBDD; --lama-ink:#8F3F0B;
+  --lain:#8C95A7; --lain-soft:#EEF0F4; --lain-ink:#465063;
+  --tip:#FFF6DA; --tip-line:#F2D98C; --tip-ink:#6B4E00;
+  --on-solid:#FFFFFF;
+  --shadow:0 1px 2px rgba(19,32,54,.05),0 12px 28px -16px rgba(19,32,54,.28);
+  --f:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+/* Pengguna meminta latar putih: mode gelap memakai palet terang yang sama. */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#FFFFFF; --card:#FFFFFF; --soft:#F5F7FA; --soft-2:#EEF1F6;
+    --ink:#132036; --ink-2:#4B566B; --ink-3:#7C8699;
+    --line:#E5E9F0; --line-2:#D0D7E2;
+    --brand:#1F3C88; --brand-2:#2E56C2; --brand-soft:#EAF0FC;
+    --baru:#12875F; --baru-soft:#E1F4EB; --baru-ink:#0B5B40;
+    --lama:#E06B1F; --lama-soft:#FDEBDD; --lama-ink:#8F3F0B;
+    --lain:#8C95A7; --lain-soft:#EEF0F4; --lain-ink:#465063;
+    --tip:#FFF6DA; --tip-line:#F2D98C; --tip-ink:#6B4E00;
+    --on-solid:#FFFFFF;
+    color-scheme:light;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#FFFFFF; --card:#FFFFFF; --soft:#F5F7FA; --soft-2:#EEF1F6;
+  --ink:#132036; --ink-2:#4B566B; --ink-3:#7C8699;
+  --line:#E5E9F0; --line-2:#D0D7E2;
+  --brand:#1F3C88; --brand-2:#2E56C2; --brand-soft:#EAF0FC;
+  --baru:#12875F; --baru-soft:#E1F4EB; --baru-ink:#0B5B40;
+  --lama:#E06B1F; --lama-soft:#FDEBDD; --lama-ink:#8F3F0B;
+  --lain:#8C95A7; --lain-soft:#EEF0F4; --lain-ink:#465063;
+  --tip:#FFF6DA; --tip-line:#F2D98C; --tip-ink:#6B4E00;
+  --on-solid:#FFFFFF;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.shell{max-width:1180px;margin:0 auto;padding:16px clamp(16px,3.2vw,32px) 36px}
+h1,h2,h3,h4{margin:0;line-height:1.2;color:var(--ink);letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:clamp(21px,2.4vw,26px);font-weight:800}
+h3{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+h3 .ic{color:var(--brand)}
+h4{font-size:14.5px;font-weight:700}
+p{margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand-2);outline-offset:2px;border-radius:8px}
+.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:inline-block;vertical-align:middle}
+.hint{font-size:13px;color:var(--ink-3)}
+.mono{font-family:var(--f-mono)}
+.blk{display:flex;flex-direction:column;gap:14px}
+.blk-h{display:flex;flex-direction:column;gap:4px}
+.view{display:flex;flex-direction:column;gap:28px}
+
+/* header + tabs */
+.hdr{display:flex;align-items:center;gap:12px;padding:4px 0 12px}
+.logo{width:42px;height:42px;border-radius:12px;background:var(--brand);color:var(--on-solid);display:grid;place-items:center;font-size:22px;flex:none}
+.ttl{font-size:19px;font-weight:800}
+.hdr .grow{flex:1 1 0;min-width:0}
+.sw{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line-2);background:var(--card);border-radius:999px;padding:6px 12px 6px 7px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;flex:none;white-space:nowrap}
+.sw:hover{border-color:var(--brand-2)}
+.sw .trk{width:30px;height:18px;border-radius:99px;background:var(--line-2);position:relative;transition:background .2s;flex:none}
+.sw .knob{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .2s}
+.sw[aria-checked="true"]{color:var(--brand)}
+.sw[aria-checked="true"] .trk{background:var(--brand)}
+.sw[aria-checked="true"] .knob{transform:translateX(12px)}
+.op{font-family:var(--f-mono);font-size:12px;font-weight:500;color:var(--brand);line-height:1.35;overflow-wrap:anywhere}
+.op-api{color:var(--ink-3);font-weight:400}
+body.no-op .op{display:none !important}
+.fn .op{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rn-w{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rhb .op{display:block;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fchip .op{font-size:11.5px}
+.techrow{display:flex;flex-wrap:wrap;gap:6px}
+.techrow span{display:inline-flex;align-items:baseline;gap:6px;background:var(--soft);border-radius:8px;padding:5px 9px;font-size:12px;color:var(--ink-3);min-width:0}
+.techrow em{font-style:normal;font-weight:600}
+.techrow code{font-family:var(--f-mono);font-size:12.5px;color:var(--ink);overflow-wrap:anywhere}
+.techrow .k-op code{color:var(--brand);font-weight:500}
+.sub{font-size:13px;color:var(--ink-3)}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);border-bottom:1px solid var(--line);margin-bottom:24px}
+.tabs-in{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:8px 0}
+.tabs-in::-webkit-scrollbar{display:none}
+.tabs-in.more{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 44px),transparent)}
+.tab{display:inline-flex;align-items:center;gap:7px;border:0;background:transparent;padding:8px 12px;border-radius:10px;font-size:14px;font-weight:600;color:var(--ink-2);white-space:nowrap;cursor:pointer}
+.tab .ic{font-size:17px}
+.tab:hover{background:var(--soft)}
+.tab[aria-selected="true"]{background:var(--brand-soft);color:var(--brand)}
+
+/* shared bits */
+.bub{display:inline-grid;place-items:center;border-radius:50%;flex:none;background:var(--brand-soft);color:var(--brand)}
+.bub.s{width:30px;height:30px;font-size:16px}
+.bub.m{width:42px;height:42px;font-size:21px}
+.bub.l{width:64px;height:64px;font-size:30px}
+.bub.xl{width:72px;height:72px;font-size:34px}
+.bub.baru{background:var(--baru-soft);color:var(--baru)}
+.bub.lama{background:var(--lama-soft);color:var(--lama)}
+.bub.gray{background:var(--soft-2);color:var(--ink-2)}
+.bub.solid{background:var(--brand);color:var(--on-solid)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none;background:var(--lain)}
+.dot.baru{background:var(--baru)} .dot.lama{background:var(--lama)} .dot.lain{background:var(--lain)}
+.dot.lg{width:14px;height:14px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--ink-3)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.code{display:inline-flex;align-items:center;font-family:var(--f-mono);font-size:12px;font-weight:500;color:var(--brand);background:var(--brand-soft);padding:1px 7px;border-radius:6px;white-space:nowrap}
+.sp{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.sp.baru{background:var(--baru-soft);color:var(--baru-ink)} .sp.lama{background:var(--lama-soft);color:var(--lama-ink)} .sp.lain{background:var(--lain-soft);color:var(--lain-ink)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--soft);font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.chip b{color:var(--ink)}
+.chip .ic{font-size:15px;color:var(--brand)}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line-2);background:var(--card);border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--ink-2)}
+.btn .ic{font-size:16px}
+.btn:hover{border-color:var(--brand-2);color:var(--brand)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--on-solid)}
+.btn.primary:hover{background:var(--brand-2);border-color:var(--brand-2);color:var(--on-solid)}
+.btn[aria-pressed="true"]{background:var(--tip);border-color:var(--tip-line);color:var(--tip-ink)}
+.mbar{display:flex;height:5px;border-radius:99px;overflow:hidden;background:var(--soft-2)}
+.mbar i,.sbar i{display:block;flex-basis:0;min-width:0}
+.mbar .b,.sbar .b{background:var(--baru)} .mbar .l,.sbar .l{background:var(--lama)} .mbar .o,.sbar .o{background:var(--lain)}
+.card{border:1px solid var(--line);border-radius:18px;background:var(--card);padding:clamp(16px,2.4vw,22px)}
+
+/* beranda: jalur permintaan */
+.hero{display:flex;flex-direction:column;gap:20px}
+.hero-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 16px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.path{display:flex;align-items:flex-start;padding:4px 0 2px}
+.st{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;flex:0 0 auto;width:100px;transition:opacity .3s}
+.st-t{display:flex;flex-direction:column;align-items:center;gap:2px}
+.st b{font-size:14px;font-weight:700;line-height:1.25}
+.st small{font-size:12px;color:var(--ink-3);line-height:1.3}
+.st .bub{transition:transform .3s,box-shadow .3s}
+.st.on .bub{transform:scale(1.1);box-shadow:0 0 0 7px var(--brand-soft)}
+.st.on .bub.baru{box-shadow:0 0 0 7px var(--baru-soft)}
+.st.on .bub.solid{box-shadow:0 0 0 7px var(--brand-soft)}
+.path.playing .st:not(.on){opacity:.35}
+.conn{flex:1 1 auto;min-width:16px;margin-top:31px;border-top:2px dashed var(--line-2);position:relative}
+.conn::after{content:'';position:absolute;top:-5px;left:0;width:8px;height:8px;border-radius:50%;background:var(--brand-2);animation:mvh 2.4s linear infinite}
+@keyframes mvh{from{left:0}to{left:calc(100% - 8px)}}
+@keyframes mvv{from{top:0}to{top:calc(100% - 8px)}}
+.st-pair{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;padding:0 18px;flex:none}
+.st-pair .st{height:112px}
+.st-pair .or{height:24px;display:grid;place-items:center;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase}
+.st-pair::before,.st-pair::after{content:'';position:absolute;top:32px;height:148px;width:36px;border:2px dashed var(--line-2)}
+.st-pair::before{left:0;border-right:0;border-radius:12px 0 0 12px}
+.st-pair::after{right:0;border-left:0;border-radius:0 12px 12px 0}
+.cap{display:flex;align-items:center;gap:10px;min-height:46px;padding:10px 14px;border-radius:12px;background:var(--soft);font-size:14px;color:var(--ink-2)}
+.cap .ic{font-size:18px;color:var(--brand);flex:none}
+.cap b{color:var(--brand)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card);min-width:0}
+.tile b{display:block;font-size:26px;font-weight:800;line-height:1.1}
+.tile .l1{display:block;font-size:13.5px;font-weight:600;color:var(--ink-2)}
+.tile small{display:block;font-size:12px;color:var(--ink-3)}
+
+/* beranda: peta perjalanan */
+.journey{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;position:relative}
+.journey::before{content:'';position:absolute;left:8%;right:8%;top:15px;border-top:2px dashed var(--line-2)}
+.stage{display:flex;flex-direction:column;gap:10px;min-width:0;position:relative}
+.stage-h{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;background:var(--bg);padding-right:10px;font-size:13px;font-weight:700;color:var(--ink-2)}
+.stage-h .num{width:30px;height:30px;border-radius:50%;background:var(--brand);color:var(--on-solid);display:grid;place-items:center;font-size:13px;font-weight:800}
+.stage-h .num .ic{font-size:16px}
+.ftile{appearance:none;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s;width:100%}
+.ftile:hover{border-color:var(--brand-2);box-shadow:var(--shadow);transform:translateY(-1px)}
+.ftile .top{display:flex;align-items:center;gap:11px;min-width:0}
+.ftile .nm{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ftile b{font-size:14.5px;font-weight:700;line-height:1.3}
+.ftile small{font-size:12px;color:var(--ink-3)}
+.lane{display:flex;flex-direction:column;gap:10px}
+.lane .ftile{flex-direction:row;align-items:center;gap:20px}
+.lane .ftile .top{flex:1 1 auto}
+.lane .ftile .mbar{flex:0 0 40%}
+
+/* alur */
+.picker{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:thin}
+.pk{flex:0 0 auto;width:102px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;padding:10px 6px;border:1px solid var(--line);border-radius:14px;background:var(--card);cursor:pointer;font-size:12px;font-weight:600;color:var(--ink-2);line-height:1.25}
+.pk:hover{border-color:var(--brand-2)}
+.pk .pk-c{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+.pk[aria-current="true"]{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}
+.pk[aria-current="true"] .bub{background:var(--brand);color:var(--on-solid)}
+.fl-h{display:flex;flex-wrap:wrap;align-items:center;gap:16px 20px}
+.fl-h .t{flex:1 1 280px;min-width:0;display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.fl-h p{color:var(--ink-2);font-size:15px}
+.fl-stats{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ring{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;position:relative;flex:none}
+.ring::before{content:'';position:absolute;inset:7px;border-radius:50%;background:var(--card)}
+.ring span{position:relative;font-size:14px;font-weight:800;line-height:1;text-align:center}
+.ring small{display:block;font-size:10px;font-weight:600;color:var(--ink-3);margin-top:2px}
+.stepper{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:16px}
+.step{display:flex;flex-direction:column;gap:10px;min-width:0;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;top:17px;left:46px;right:-14px;border-top:2px dashed var(--line-2)}
+.sn{width:36px;height:36px;border-radius:50%;background:var(--brand);color:var(--on-solid);display:grid;place-items:center;font-weight:800;font-size:15px;flex:none}
+.step h4{font-size:14px;line-height:1.3;min-height:2.6em}
+.fns{display:flex;flex-direction:column;gap:8px}
+.fn{appearance:none;text-align:left;border:1px solid var(--line);border-left:4px solid var(--c,var(--lain));background:var(--card);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;cursor:pointer;width:100%}
+.fn.baru{--c:var(--baru)} .fn.lama{--c:var(--lama)} .fn.lain{--c:var(--lain)}
+.fn.shared{border-style:dashed;border-left-width:1px;background:var(--soft)}
+.fn:hover{box-shadow:var(--shadow);border-color:var(--line-2);border-left-color:var(--c,var(--lain))}
+.fn-n{font-size:13.5px;font-weight:600;line-height:1.3}
+.fn-m{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:12px;color:var(--ink-3)}
+.fn-m .ic{font-size:13px}
+.fn-m .k{display:inline-flex;align-items:center;gap:5px}
+.mores{display:flex;flex-direction:column;gap:10px}
+details.more{border:1px solid var(--line);border-radius:14px;background:var(--card)}
+details.more>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 16px;font-weight:600;font-size:14px;color:var(--ink-2)}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary .ic{font-size:18px;color:var(--brand)}
+details.more>summary .chev{margin-left:auto;color:var(--ink-3);transition:transform .2s}
+details.more[open]>summary .chev{transform:rotate(180deg)}
+details.more>.body{padding:0 16px 16px;font-size:14px;color:var(--ink-2);display:flex;flex-direction:column;gap:12px}
+details.more ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.story{background:var(--tip);border-radius:12px;padding:12px 14px;color:var(--ink)}
+
+/* matriks */
+.mx-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.mx{border-collapse:separate;border-spacing:0;font-size:13px;width:100%}
+.mx.fmx{width:auto}
+.mx-wrap.fit{align-self:flex-start;max-width:100%}
+.fmx td{min-width:44px}
+.mx th,.mx td{padding:0;border-bottom:1px solid var(--line);background-color:var(--card)}
+.mx tbody tr:last-child th,.mx tbody tr:last-child td{border-bottom:0}
+.mx td{text-align:center;vertical-align:middle;min-width:40px;height:42px;background-image:radial-gradient(circle,var(--line-2) 1.6px,transparent 2.2px)}
+.mx td.on{background-image:none}
+.mx .rh{position:sticky;left:0;z-index:1;text-align:left;border-right:1px solid var(--line);font-weight:600}
+.mx thead th{vertical-align:bottom;border-bottom:1px solid var(--line-2)}
+.mx thead .rh{z-index:2;vertical-align:bottom;padding:10px 12px;font-weight:600}
+.mx tbody tr:hover th,.mx tbody tr:hover td{background-color:var(--soft)}
+.rhb{display:flex;align-items:center;gap:9px;width:100%;min-width:220px;max-width:330px;padding:8px 12px;border:0;background:transparent;text-align:left;cursor:pointer;font-weight:600;font-size:13px;line-height:1.3}
+.rhb:hover .rn{color:var(--brand);text-decoration:underline;text-underline-offset:3px}
+.stn{width:22px;height:22px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-size:11px;font-weight:800;flex:none}
+.chb{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;width:100%;padding:10px 4px 8px;border:0;background:transparent;cursor:pointer}
+.chb:hover .vt,.chb:hover .cc{color:var(--brand)}
+.vt{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:12px;font-weight:600;color:var(--ink-2);max-height:132px;overflow:hidden;text-overflow:ellipsis}
+.cc{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+.mx .grp th{background:var(--soft);font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:7px 12px;text-align:left}
+.bb{display:inline-block;border:0;padding:0;border-radius:50%;cursor:pointer;vertical-align:middle;box-shadow:0 0 0 2px var(--card)}
+.bb:hover{box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--brand-2)}
+.amx .rhb .cnt{margin-left:auto;font-size:12px;color:var(--ink-3);font-weight:600;font-variant-numeric:tabular-nums}
+.rhb .rs{display:none}
+.only-phone{display:none !important}
+.sizes{display:inline-flex;align-items:center;gap:6px}
+.sizes i{display:inline-block;border-radius:50%;background:var(--ink-3)}
+
+/* aplikasi */
+.toolbar{display:flex;flex-direction:column;gap:12px}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line-2);border-radius:12px;padding:0 12px;height:44px;max-width:420px;background:var(--card)}
+.search .ic{font-size:18px;color:var(--ink-3)}
+.search input{border:0;outline:0;font:inherit;font-size:15px;flex:1;min-width:0;background:transparent;color:var(--ink);height:100%}
+.search:focus-within{border-color:var(--brand-2);box-shadow:0 0 0 3px var(--brand-soft)}
+.cats{display:flex;flex-wrap:wrap;gap:6px}
+.cat{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.cat .ic{font-size:15px}
+.cat b{font-weight:700;color:var(--ink-3)}
+.cat:hover{border-color:var(--line-2)}
+.cat[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-solid)}
+.cat[aria-pressed="true"] b{color:var(--on-solid)}
+
+/* cari */
+.controls{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) auto;gap:12px;align-items:center}
+.controls .search{max-width:none}
+select{font:inherit;font-size:14.5px;color:var(--ink);background:var(--card);border:1px solid var(--line-2);border-radius:12px;padding:0 12px;height:44px;width:100%}
+.seg{display:inline-flex;gap:4px;background:var(--soft);padding:4px;border-radius:12px}
+.seg button{border:0;background:transparent;padding:0 12px;min-height:36px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--on-solid)}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,350px),1fr));gap:10px}
+.res{appearance:none;text-align:left;border:1px solid var(--line);border-left:4px solid var(--c,var(--lain));background:var(--card);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:12px;cursor:pointer;min-width:0}
+.res.baru{--c:var(--baru)} .res.lama{--c:var(--lama)} .res.lain{--c:var(--lain)}
+.res:hover{box-shadow:var(--shadow)}
+.res .bub{width:34px;height:34px;font-size:17px}
+.res .b{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.res .n{font-weight:600;font-size:14px;line-height:1.3}
+.res .m{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;font-size:12px;color:var(--ink-3)}
+.res .m .ic{font-size:13px}
+.res .m .k{display:inline-flex;align-items:center;gap:5px}
+.res .op{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.mig .op{color:var(--ink-3);font-weight:400}
+.empty{padding:28px;text-align:center;color:var(--ink-3);border:1px dashed var(--line-2);border-radius:14px;grid-column:1 / -1}
+
+/* sistem */
+.sys-hero{display:flex;flex-wrap:wrap;align-items:center;gap:24px 36px}
+.donut{width:160px;height:160px;border-radius:50%;display:grid;place-items:center;position:relative;flex:none}
+.donut::before{content:'';position:absolute;inset:22px;border-radius:50%;background:var(--card)}
+.donut div{position:relative;text-align:center}
+.donut b{font-size:34px;font-weight:800;display:block;line-height:1}
+.donut span{font-size:12.5px;color:var(--ink-3);font-weight:600}
+.sys-leg{display:flex;flex-direction:column;gap:10px;font-size:14.5px;color:var(--ink-2)}
+.sys-leg div{display:flex;align-items:center;gap:10px}
+.sys-leg b{font-size:20px;color:var(--ink);min-width:36px;font-variant-numeric:tabular-nums}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.hbs{display:flex;flex-direction:column;gap:10px}
+.hb{display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr) 58px;gap:12px;align-items:center;font-size:13.5px}
+.hb .lbl{display:flex;align-items:center;gap:8px;min-width:0;border:0;background:transparent;padding:0;cursor:pointer;text-align:left;color:var(--ink-2);font-weight:600}
+.hb .lbl:hover span{color:var(--brand)}
+.hb .lbl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb .lbl .bub{width:28px;height:28px;font-size:15px}
+.sbar{height:12px;display:flex;border-radius:6px;overflow:hidden;min-width:3px}
+.hb .v{font-size:12px;color:var(--ink-3);text-align:right;font-variant-numeric:tabular-nums}
+.migs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px}
+.mig{border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.mig h4{font-size:14.5px}
+.mig .mh{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.tagk{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--ink-3);white-space:nowrap}
+.mig .side{display:flex;flex-direction:column;gap:7px;border-radius:12px;padding:10px 12px;min-width:0}
+.mig .old{background:var(--lama-soft)} .mig .new{background:var(--baru-soft)}
+.mig .sl{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.mig .old .sl{color:var(--lama-ink)} .mig .new .sl{color:var(--baru-ink)}
+.mig .tl{font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mig .achip{background:var(--card);border-color:transparent}
+.mig .arr{display:grid;place-items:center;color:var(--ink-3);font-size:18px;transform:rotate(90deg);height:16px}
+.mig small{font-size:12.5px;color:var(--ink-3)}
+.fchips{display:flex;flex-wrap:wrap;gap:8px}
+.fchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-left:4px solid var(--c,var(--lain));border-radius:10px;padding:7px 12px;background:var(--card);font-size:13px;font-weight:600;cursor:pointer;text-align:left}
+.fchip.baru{--c:var(--baru)} .fchip.lama{--c:var(--lama)} .fchip.lain{--c:var(--lain)}
+.fchip:hover{box-shadow:var(--shadow)}
+
+/* kamus */
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:12px}
+.term{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--card)}
+.term .b{display:flex;flex-direction:column;gap:4px;min-width:0}
+.term h4{font-size:14.5px}
+.term p{font-size:13.5px;color:var(--ink-2)}
+.term .an{font-size:12.5px;color:var(--ink-3);display:flex;gap:6px;align-items:flex-start}
+.term .an .ic{font-size:14px;margin-top:2px;color:var(--tip-ink)}
+
+/* tabel (catatan, teknis) */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+table.t{border-collapse:collapse;width:100%;font-size:13.5px}
+table.t th,table.t td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+table.t th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);background:var(--soft);white-space:nowrap}
+table.t td.num,table.t th.num{text-align:right;font-variant-numeric:tabular-nums}
+table.t tr:last-child td{border-bottom:0}
+table.t td .mono{font-size:12.5px;overflow-wrap:break-word}
+table.t td .mono.url{overflow-wrap:anywhere}
+.secs{display:flex;flex-direction:column;gap:22px}
+
+/* dialog */
+dialog{border:0;padding:0;border-radius:20px;background:var(--card);color:var(--ink);width:min(680px,calc(100vw - 24px));max-height:min(88vh,860px);box-shadow:0 30px 80px -20px rgba(15,25,45,.35)}
+dialog::backdrop{background:rgba(15,23,42,.38)}
+.dlg{display:flex;flex-direction:column;gap:16px;padding:20px clamp(16px,3vw,24px) 22px}
+.dlg-h{display:flex;align-items:flex-start;gap:12px}
+.dlg-h .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.dlg-h .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dlg-h h3{font-size:20px;font-weight:800;display:block}
+.x{appearance:none;border:1px solid var(--line);background:var(--card);border-radius:10px;width:38px;height:38px;cursor:pointer;display:grid;place-items:center;font-size:18px;flex:none;color:var(--ink-2)}
+.x:hover{border-color:var(--line-2);color:var(--ink)}
+.back{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--brand);font-weight:600;font-size:13.5px;cursor:pointer;padding:0}
+.lead{font-size:15px;color:var(--ink-2)}
+.sec{display:flex;flex-direction:column;gap:8px}
+.lab{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.achips{display:flex;flex-wrap:wrap;gap:6px}
+.achip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:3px 11px 3px 3px;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink)}
+.achip .bub{width:26px;height:26px;font-size:14px}
+.achip:hover{border-color:var(--brand-2)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.kpis div{background:var(--soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
+.kpis b{font-size:20px;font-weight:800;line-height:1.2}
+.kpis span{font-size:12px;color:var(--ink-3)}
+.fhd{display:flex;align-items:center;gap:8px;border:0;background:transparent;padding:0;font-weight:700;font-size:14px;cursor:pointer;text-align:left;color:var(--ink)}
+.fhd .n{font-size:12px;color:var(--ink-3);font-weight:600}
+.fhd:hover{color:var(--brand)}
+dl.tech{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:8px 14px;margin:0;font-size:13.5px}
+dl.tech dt{color:var(--ink-3)}
+dl.tech dd{margin:0;overflow-wrap:anywhere}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-3);display:flex;flex-direction:column;gap:4px}
+
+@media (min-width:1120px){
+  .picker{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));overflow:visible}
+  .pk{width:auto}
+}
+@media (max-width:1000px){
+  .journey{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .journey::before{display:none}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .controls{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:900px){
+  .stepper{grid-template-columns:minmax(0,1fr);gap:4px}
+  .step{padding-left:52px;padding-bottom:18px;min-height:52px}
+  .step .sn{position:absolute;left:0;top:0}
+  .step h4{min-height:0;padding-top:7px}
+  .step:not(:last-child)::after{left:17px;top:42px;bottom:0;right:auto;border-top:0;border-left:2px dashed var(--line-2)}
+}
+@media (max-width:860px){
+  .path{flex-direction:column;align-items:stretch;padding:0}
+  .st{width:auto;flex-direction:row;align-items:center;text-align:left;gap:12px}
+  .st .bub.l{width:48px;height:48px;font-size:23px}
+  .st-t{align-items:flex-start}
+  .conn{flex:0 0 20px;min-width:0;width:0;margin:3px 0 3px 23px;border-top:0;border-left:2px dashed var(--line-2)}
+  .conn::after{left:-5px;top:0;animation-name:mvv}
+  .st-pair{flex-direction:column;align-items:stretch;padding:0;gap:4px}
+  .st-pair::before,.st-pair::after{display:none}
+  .st-pair .st{height:auto}
+  .st-pair .or{height:auto;display:block;width:48px;text-align:center;font-size:10px;padding:2px 0}
+}
+@media (max-width:640px){
+  .shell{padding-top:10px}
+  .hdr{flex-wrap:wrap;row-gap:8px}
+  .hdr .grow{flex:1 1 calc(100% - 54px)}
+  .sw{order:3;margin-left:54px}
+  .journey{grid-template-columns:minmax(0,1fr)}
+  .tile{padding:12px;gap:8px;flex-direction:column;align-items:flex-start}
+  .tile .bub{width:34px;height:34px;font-size:17px}
+  .tile b{font-size:22px}
+  .tile small{display:none}
+  .stage{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stage-h{grid-column:1 / -1}
+  .stage .ftile{padding:12px;gap:10px}
+  .stage .ftile .top{flex-direction:column;align-items:flex-start;gap:8px}
+  .stage .ftile b{font-size:13.5px}
+  .fl-h{gap:12px 14px}
+  .fl-h .bub.xl{width:52px;height:52px;font-size:26px}
+  .fl-h .t{flex:1 1 0}
+  .fl-stats{width:100%}
+  .amx .rhb{min-width:0;max-width:150px;padding:8px 10px}
+  .amx .rhb .rn,.amx .rhb .cnt{display:none}
+  .amx .rhb .rs{display:inline}
+  .cats{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-right:-16px;padding-right:16px}
+  .cats::-webkit-scrollbar{display:none}
+  .cat{flex:none}
+  .donut{width:124px;height:124px}
+  .donut::before{inset:17px}
+  .donut b{font-size:27px}
+  .lane .ftile{flex-direction:column;align-items:stretch;gap:12px}
+  .lane .ftile .mbar{flex:none}
+  .hb{grid-template-columns:minmax(0,1fr) 56px;row-gap:6px}
+  .hb .sbar{grid-column:1 / -1;grid-row:2}
+  .hbs{gap:14px}
+  .only-phone{display:inline !important}
+  dl.tech{grid-template-columns:minmax(0,1fr)}
+  dl.tech dt{margin-top:6px}
+  .rhb{min-width:170px}
+  .tab{padding:8px 10px}
+  table.t.stackable,table.t.stackable tbody,table.t.stackable tr{display:block;width:100%}
+  table.t.stackable thead{display:none}
+  table.t.stackable tr{padding:12px 14px;border-bottom:1px solid var(--line)}
+  table.t.stackable tr:last-child{border-bottom:0}
+  table.t.stackable td{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:3px 0;border:0;text-align:left}
+  table.t.stackable td::before{content:attr(data-label);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding-top:2px}
+  table.t.stackable td .mono{overflow-wrap:anywhere}
+}
+@media (prefers-reduced-motion:reduce){
+  *{scroll-behavior:auto!important;transition:none!important}
+  .conn::after{animation:none;display:none}
+}
+</style>
+
+<div class="shell">
+  <header class="hdr">
+    <span class="logo"><span data-ic="map"></span></span>
+    <div class="grow"><h1 class="ttl">Peta API MW Account</h1><p class="sub">Fungsi API per alur nasabah, dan aplikasi yang memakainya</p></div>
+    <button class="sw" id="opTog" type="button" role="switch" aria-checked="true"><span class="trk" aria-hidden="true"><span class="knob"></span></span>Operation name</button>
+  </header>
+  <nav class="tabs" aria-label="Bagian halaman">
+    <div class="tabs-in" role="tablist">
+      <button class="tab" role="tab" data-tab="beranda" id="t-beranda"><span data-ic="home"></span>Beranda</button>
+      <button class="tab" role="tab" data-tab="alur" id="t-alur"><span data-ic="route"></span>Alur nasabah</button>
+      <button class="tab" role="tab" data-tab="aplikasi" id="t-aplikasi"><span data-ic="grid"></span>Aplikasi</button>
+      <button class="tab" role="tab" data-tab="cari" id="t-cari"><span data-ic="search"></span>Cari fungsi</button>
+      <button class="tab" role="tab" data-tab="sistem" id="t-sistem"><span data-ic="swap"></span>Sistem baru vs lama</button>
+      <button class="tab" role="tab" data-tab="kamus" id="t-kamus"><span data-ic="book"></span>Kamus</button>
+      <button class="tab" role="tab" data-tab="catatan" id="t-catatan"><span data-ic="clipboard"></span>Catatan tim</button>
+    </div>
+  </nav>
+  <main>
+    <section class="view" id="v-beranda" role="tabpanel" aria-labelledby="t-beranda"></section>
+    <section class="view" id="v-alur" role="tabpanel" aria-labelledby="t-alur" hidden></section>
+    <section class="view" id="v-aplikasi" role="tabpanel" aria-labelledby="t-aplikasi" hidden></section>
+    <section class="view" id="v-cari" role="tabpanel" aria-labelledby="t-cari" hidden></section>
+    <section class="view" id="v-sistem" role="tabpanel" aria-labelledby="t-sistem" hidden></section>
+    <section class="view" id="v-kamus" role="tabpanel" aria-labelledby="t-kamus" hidden></section>
+    <section class="view" id="v-catatan" role="tabpanel" aria-labelledby="t-catatan" hidden></section>
+  </main>
+  <footer>
+    <span>Sumber: API_MW_Account_impacted_by_Channel_5.xlsx. Nama fungsi sederhana disusun dari nama teknisnya; yang bertanda "dugaan" perlu divalidasi tim MW Account.</span>
+    <span>Memuat nama sistem dan alamat internal. Bagikan hanya ke pihak internal.</span>
+  </footer>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle"><div class="dlg" id="dlgBody"></div></dialog>
+
+<script type="application/json" id="data">{"flows":[{"code":"F1","name":"Daftar Jadi Nasabah","short":"Bikin nomor nasabah, lengkapi data diri, simpan persetujuan","desc":"Saat seseorang baru menjadi nasabah, bank membuatkan nomor induk nasabah (CIF), melengkapi data dirinya, lalu menyimpan persetujuannya.","question":"Saat ada nasabah baru, fungsi apa yang dipakai dan aplikasi mana yang memakainya?","story":"Andi ingin menjadi nasabah. Petugas memprosesnya lewat aplikasi BOS: aplikasi mengecek dulu apakah Andi sudah terdaftar, lalu membuatkan nomor nasabah (CIF), melengkapi data pemilik dana dan foto dokumennya. Kalau Andi memakai Digital Banking, persetujuannya atas penggunaan data disimpan lewat fungsi \"Simpan persetujuan nasabah\".","phase":"P1","notes":["Ada 2 cara membuat nomor nasabah: lewat sistem baru (dipakai BOS, UR, rdn-system) dan lewat sistem lama (dipakai Pega CS Konven).","Persetujuan nasabah (consent) saat ini hanya dipakai aplikasi Digital Banking."],"tech":["CIF dibuat lewat 2 jalur: Customer-Integration-Personal /create (mscustomerservice) dipakai BOS, UR, rdn-system; Customer-Konven /syncCIF (SOA, find-and-create) dipakai Pega CS Konven.","mscustomerservice berada di luar 5 MS milik MW Account. Kepemilikannya masih perlu dikonfirmasi.","Beneficial owner punya 2 versi dengan ejaan dan backend berbeda: /benefOwner (v1.0, mscustomerservice) dan /benef-owner (v2.0, mscustomer).","Consent (submit & inquiry) saat ini hanya dipakai Digital Banking.","Kandidat varian syariah yang belum pasti milik MW: Customer-Syariah /syncCIF (BE IB Syariah). Lihat tab Kandidat & Isu."],"steps":[{"title":"Cek: sudah jadi nasabah?","items":[{"id":"o19","shared":true}]},{"title":"Buat nomor nasabah (CIF)","items":[{"id":"o0","shared":false},{"id":"o1","shared":false}]},{"title":"Lengkapi data diri","items":[{"id":"o2","shared":false},{"id":"o3","shared":false},{"id":"o4","shared":false}]},{"title":"Simpan persetujuan nasabah","items":[{"id":"o5","shared":false},{"id":"o6","shared":false}]}],"stats":{"ops":7,"apps":5,"baru":9,"lama":1,"lain":0}},{"code":"F2","name":"Buka Rekening","short":"Buka tabungan, rekening lain, atau rekening investasi","desc":"Nasabah yang sudah punya nomor nasabah bisa membuka rekening: tabungan, rekening jenis lain, atau rekening untuk investasi. Deposito dan tabungan berencana dibahas di F3.","question":"Saat nasabah membuka rekening, fungsi apa saja yang dipanggil dan aplikasi mana yang memakainya?","story":"Budi sudah punya nomor nasabah dan membuka tabungan baru di Digital Banking. Aplikasi memanggil fungsi \"Buka rekening tabungan\", lalu menampilkan rekening barunya lewat \"Daftar semua rekening nasabah\" dan \"Detail rekening\".","phase":"P1","notes":["Membuka tabungan biasa sudah 100% lewat sistem baru.","Untuk deposito, Digital Banking masih memakai jalur lama dan jalur baru bersamaan (lihat F3)."],"tech":["Tabungan standar dibuka lewat Account-Integration-Personal /account-creation-saving (msaccount), dipakai Digital Banking, BOS, UR, dan sys:defaultApplication.","Deposito dan tabungan berencana dibuka lewat API produk (lihat F3). Digital Banking masih memanggil createDeposito versi SOA (v1.0) dan MS (v1.1) bersamaan.","Kategori /account-creation-saving di workbook asal tidak konsisten: Inquiry di Digital Banking & BOS, Account Management di UR & sys:defaultApplication.","Kandidat varian syariah (belum pasti milik MW): Account-Opening-Syariah /accountOpening (NanoBank) dan Customer-Syariah /openAccount (BE IB Syariah)."],"steps":[{"title":"Pastikan sudah punya nomor nasabah","items":[{"id":"o19","shared":true},{"id":"o0","shared":true}]},{"title":"Buka rekening sesuai produk","items":[{"id":"o7","shared":false},{"id":"o8","shared":false},{"id":"o9","shared":false},{"id":"o12","shared":true},{"id":"o13","shared":true},{"id":"o14","shared":true}]},{"title":"Tampilkan rekening yang baru dibuka","items":[{"id":"o33","shared":true},{"id":"o35","shared":true}]}],"stats":{"ops":3,"apps":5,"baru":6,"lama":0,"lain":0}},{"code":"F3","name":"Deposito & Tabungan Berencana","short":"Cek bunga, buka, dan cairkan lebih awal","desc":"Nasabah melihat bunga, membuka deposito atau tabungan berencana (termasuk Simas Tara), melihat kontraknya, dan bisa mencairkannya sebelum jatuh tempo.","question":"Fungsi apa yang dipakai untuk bunga, pembukaan, dan pencairan deposito/tabungan berencana, dan aplikasi mana yang memakainya?","story":"Citra membuka deposito di Digital Banking. Aplikasi menghitung bunganya lewat \"Cek bunga deposito\", lalu membuka depositonya. Saat ini Digital Banking masih punya dua jalur untuk membuka deposito: jalur baru dan jalur lama. Chatbot bank menampilkan tabel bunga deposito dari sistem lama.","phase":"P1","notes":["Bunga deposito bisa dilihat dari 2 sumber: sistem baru (Digital Banking) dan sistem lama (chatbot). Kalau ada program bunga khusus, keduanya perlu disamakan.","Membuat rencana tabungan masih lewat sistem lama; pencairannya sudah lewat sistem baru."],"tech":["Ada 2 sumber rate deposito: account-deposito /rate (MS, Digital Banking) dan accounts-deposit /rates (SOA, prissa-chat-bot). Kalau ada program rate khusus, pastikan keduanya konsisten.","createDeposito v1.0 (SOA) dan v1.1 (MS) sama-sama masih dipanggil Digital Banking, jadi endpoint SOA-nya belum bisa dimatikan.","account-savings /createPlan dan /createSaving masih SOA, sedangkan pencairan (/break) sudah lewat msaccount.","Simas Tara /contract-detail hanya terlihat di sys:defaultApplication (native URL kosong), sehingga arsitekturnya belum diketahui."],"steps":[{"title":"Cek bunga","items":[{"id":"o10","shared":false},{"id":"o11","shared":false}]},{"title":"Buka deposito / tabungan berencana","items":[{"id":"o12","shared":false},{"id":"o13","shared":false},{"id":"o14","shared":false},{"id":"o15","shared":false}]},{"title":"Lihat kontrak","items":[{"id":"o16","shared":false}]},{"title":"Cairkan lebih awal","items":[{"id":"o17","shared":false},{"id":"o18","shared":false}]}],"stats":{"ops":8,"apps":3,"baru":4,"lama":4,"lain":1}},{"code":"F4","name":"Cek Data Nasabah","short":"Cari nasabah dan lihat profilnya","desc":"Aplikasi mencari nasabah (lewat nomor nasabah, nomor rekening, atau nomor HP) lalu mengambil profilnya. Sebagian data dipakai untuk menilai pengajuan kredit.","question":"Fungsi apa yang dipakai untuk mencari dan melihat data nasabah, dan aplikasi mana yang memakainya?","story":"Saat nasabah menghubungi bank atau mengajukan kredit, aplikasi perlu tahu siapa nasabahnya. Fungsi \"Cek profil nasabah\" dipakai 10 aplikasi, mulai dari Digital Banking sampai aplikasi pengajuan kredit, sehingga menjadi fungsi yang paling banyak dipakai.","phase":"P2","notes":["\"Cek profil nasabah\" adalah fungsi yang paling banyak dipakai: 10 aplikasi. Kalau fungsi ini bermasalah, 10 aplikasi ikut terdampak.","Satu fungsi lama (detail nasabah dari iBank) saat ini selalu gagal menurut laporan SLO 2026."],"tech":["customer-data v3.0 /profile/inquiry/ adalah operation dengan pemakai terbanyak (10 channel). Perubahan response-nya berdampak luas.","Tiga versi /profile/inquiry/ memanggil endpoint yang berbeda: v3.0 → /api/v1.1/profile, v3.1 → /api/v1.0/customer-profile (cari by nomor HP), v3.2 → /api/v1.2/profile.","Parameter type di v3.0: type=full dipakai BOS, Pega LOS, BE-CRS; type=check dipakai 6 channel lain.","customer-management-digital /getDetailCustomer berjalan di server legacy dan menurut SLO 2026 gagal 100% (281 request, semua HTTP 500).","customer-data /scoring masih SOA dan berjalan di 2 host (10.22.11.100 dan 10.22.11.101)."],"steps":[{"title":"Cari nasabah","items":[{"id":"o19","shared":false},{"id":"o20","shared":false},{"id":"o21","shared":false},{"id":"o22","shared":false},{"id":"o23","shared":false},{"id":"o24","shared":false}]},{"title":"Lihat data pendukung","items":[{"id":"o25","shared":false},{"id":"o26","shared":false},{"id":"o27","shared":false}]},{"title":"Data untuk pengajuan kredit","items":[{"id":"o28","shared":false},{"id":"o29","shared":false},{"id":"o30","shared":false},{"id":"o31","shared":false}]},{"title":"Cari berdasarkan tanggal","items":[{"id":"o32","shared":false}]}],"stats":{"ops":12,"apps":14,"baru":24,"lama":1,"lain":1}},{"code":"F5","name":"Cek Saldo & Produk","short":"Lihat rekening, saldo, dan semua produk","desc":"Nasabah atau petugas melihat daftar rekening, detail dan saldo, serta ringkasan semua produk yang dimiliki nasabah.","question":"Fungsi apa yang dipakai untuk melihat rekening, saldo, dan produk nasabah, dan aplikasi mana yang memakainya?","story":"Dewi membuka Digital Banking. Aplikasi mengambil daftar rekening Dewi, detail tiap rekening, lalu ringkasan produk-produk yang ia miliki.","phase":"P2","notes":["Ringkasan produk nasabah tersedia di beberapa fungsi berbeda, tergantung kebutuhan: per rekening, per nasabah, posisi akhir hari, atau akhir bulan.","Tiga fungsi ringkasan tabungan masih lewat sistem lama."],"tech":["/getDetail v2.0 (NanoBank, Custody) dan v2.2 (Digital Banking, SOA) memanggil endpoint backend yang sama.","Portofolio tersebar di beberapa API: Account-Data, customer-data, customer-data-syariah, customer-data-external, dan Customer-Integration-Personal. Pilih sesuai kebutuhan: by rekening, by CIF, posisi EOD, atau EOM.","Portofolio yang masih SOA: customer-data /portfolioByAccountNo, /portfolio/saving, dan customer-data-syariah /portfolio/saving.","Customer-Integration-Personal /account-detail-by-cif bernama \"Customer\", tetapi backend-nya msaccount.","Partner B2B mengecek saldo lewat SNAP balance-inquiry (lihat F11)."],"steps":[{"title":"Lihat daftar rekening","items":[{"id":"o33","shared":false}]},{"title":"Lihat detail & saldo","items":[{"id":"o34","shared":false},{"id":"o35","shared":false},{"id":"o36","shared":false},{"id":"o37","shared":false},{"id":"o38","shared":false}]},{"title":"Lihat semua produk nasabah","items":[{"id":"o39","shared":false},{"id":"o40","shared":false},{"id":"o41","shared":false},{"id":"o42","shared":false},{"id":"o43","shared":false},{"id":"o44","shared":false}]},{"title":"Ringkasan untuk kredit & laporan","items":[{"id":"o45","shared":false},{"id":"o46","shared":false},{"id":"o47","shared":false}]}],"stats":{"ops":14,"apps":13,"baru":20,"lama":4,"lain":0}},{"code":"F6","name":"Lihat Mutasi Transaksi","short":"Transaksi hari ini, per tanggal, dan detailnya","desc":"Nasabah atau petugas melihat riwayat transaksi: hari ini, per rentang tanggal, dan rincian tiap transaksi.","question":"Saat nasabah melihat mutasi, fungsi apa yang dipanggil dan aplikasi mana yang memakainya?","story":"Nasabah ingin melihat transaksi hari ini dan bulan lalu di Digital Banking. Aplikasi memanggil \"Mutasi hari ini\" dan \"Mutasi per tanggal\". Nasabah perusahaan di IB Corporate masih dilayani jalur lama untuk dua fungsi ini.","phase":"P2","notes":["Hampir semua aplikasi sudah memakai sistem baru untuk mutasi. Pengecualiannya IB Corporate (internet banking perusahaan) yang masih memakai jalur lama."],"tech":["IB Corporate masih memakai statement v1.0 dari EDW lewat SOA; channel lain sudah memakai v2.0 (microservice).","/getStatementByDate v2.0 punya 2 backend tergantung channel: NanoBank → msaccount; Digital Banking, Pega LOS, Pega Complain, middleware → msreport.","/transaction/detail lewat snap-account-management (di luar 5 MS milik MW Account).","Partner B2B mengambil mutasi lewat SNAP bank-statement (lihat F11)."],"steps":[{"title":"Lihat transaksi hari ini","items":[{"id":"o48","shared":false},{"id":"o49","shared":false}]},{"title":"Lihat transaksi per tanggal","items":[{"id":"o50","shared":false},{"id":"o51","shared":false}]},{"title":"Lihat detail transaksi","items":[{"id":"o52","shared":false},{"id":"o53","shared":false}]},{"title":"Lihat aktivitas rekening","items":[{"id":"o54","shared":false}]},{"title":"Mutasi untuk perusahaan mitra","items":[{"id":"o90","shared":true},{"id":"o91","shared":true}]}],"stats":{"ops":5,"apps":6,"baru":10,"lama":2,"lain":0}},{"code":"F7","name":"Ubah Data & Perawatan Rekening","short":"Ubah data, aktifkan rekening tidur, urus bunga","desc":"Petugas atau aplikasi mengubah data nasabah dan rekening, mengecek produk yang terhubung, mengaktifkan rekening tidur, dan mengurus bunga rekening.","question":"Saat ada perubahan data atau perawatan rekening, fungsi apa yang dipakai dan aplikasi mana yang memakainya?","story":"Rekening Eko lama tidak dipakai sehingga menjadi rekening tidur (dormant). Untuk mengaktifkannya lagi, aplikasi BOS memakai jalur baru, sedangkan Digital Banking dan IB Corporate masih memakai jalur lama.","phase":"P3","notes":["Mengaktifkan rekening tidur punya 2 jalur: BOS lewat sistem baru, sedangkan Digital Banking dan IB Corporate lewat sistem lama.","Fungsi bunga punya 4 versi dengan 2 kegunaan berbeda (memproses vs melihat bunga). Pastikan versi yang dipakai sesuai."],"tech":["/credit-interest punya 4 versi yang mengarah ke 2 endpoint: v1.0 & v1.2 → /credit-interest, v1.1 & v2.0 → /inq-credit-interest. Pastikan versi yang dipakai sesuai kebutuhan.","Aktivasi dormant punya 2 jalur: Account-Management /releaseDormant (SOA; Digital Banking, IB Corporate) dan Account-Integration-Personal /activate-dormant (MS; BOS).","/product-linkage memakai parameter stoFlag, kemungkinan flag standing order.","Perubahan data CIF (/maintenance) lewat mscustomerservice (di luar 5 MS milik MW Account).","Kandidat varian syariah (belum pasti milik MW): account-management-syariah /releaseDormant (NanoBank)."],"steps":[{"title":"Ubah data nasabah","items":[{"id":"o55","shared":false},{"id":"o1","shared":true},{"id":"o5","shared":true},{"id":"o4","shared":true}]},{"title":"Ubah data rekening","items":[{"id":"o56","shared":false},{"id":"o57","shared":false}]},{"title":"Cek produk yang terhubung","items":[{"id":"o58","shared":false},{"id":"o59","shared":false}]},{"title":"Aktifkan rekening tidur","items":[{"id":"o60","shared":false},{"id":"o61","shared":false}]},{"title":"Urus bunga rekening","items":[{"id":"o62","shared":false},{"id":"o63","shared":false},{"id":"o64","shared":false},{"id":"o65","shared":false}]}],"stats":{"ops":7,"apps":7,"baru":13,"lama":2,"lain":0}},{"code":"F8","name":"Tahan Saldo & Blokir","short":"Tahan sebagian saldo, lepas, atau blokir rekening","desc":"Bank bisa menahan sebagian saldo untuk sementara, melepasnya kembali, atau memblokir rekening, misalnya saat menangani komplain.","question":"Fungsi apa yang dipakai untuk menahan saldo atau memblokir rekening, dan aplikasi mana yang memakainya?","story":"Sebagian saldo nasabah perlu ditahan sementara. Aplikasi BOS menahannya lewat jalur baru, sedangkan PBK dan Digital Banking masih memakai jalur lama. Saat menangani komplain, aplikasi Pega Complain bisa memblokir rekening.","phase":"P3","notes":["BOS menahan dan melepas saldo lewat sistem baru; PBK, Digital Banking, dan BE IB Syariah masih lewat sistem lama."],"tech":["Penahanan dana punya jalur MS (Account-Integration-Personal: /lock-amount, /break-lock-amount, /locked-event, dipakai BOS) dan jalur SOA (account-service-internal dan Account-Management LockAccount, dipakai PBK, Digital Banking, BE IB Syariah).","/inquiryCashback berada di modul LockAccount (SOA); v1.0 dan v2.1 memanggil endpoint yang sama.","Kategori /block/info dan /locked-event di workbook asal tertulis Account Management, padahal fungsinya inquiry."],"steps":[{"title":"Tahan sebagian saldo","items":[{"id":"o66","shared":false},{"id":"o67","shared":false},{"id":"o68","shared":false}]},{"title":"Lihat saldo yang ditahan","items":[{"id":"o69","shared":false},{"id":"o70","shared":false},{"id":"o71","shared":false},{"id":"o72","shared":false},{"id":"o73","shared":false}]},{"title":"Lepas saldo yang ditahan","items":[{"id":"o74","shared":false},{"id":"o75","shared":false}]},{"title":"Blokir rekening","items":[{"id":"o76","shared":false},{"id":"o77","shared":false}]},{"title":"Cek status blokir","items":[{"id":"o78","shared":false}]}],"stats":{"ops":12,"apps":6,"baru":7,"lama":7,"lain":0}},{"code":"F9","name":"Tutup Rekening","short":"Cek saldo terakhir lalu tutup rekening","desc":"Sebelum rekening ditutup, saldo terakhir dan informasi penutupan dicek. Produk berjangka dicairkan lebih dulu (lihat F3).","question":"Saat nasabah menutup rekening, fungsi apa yang dipanggil dan aplikasi mana yang memakainya?","story":"Fajar ingin menutup rekeningnya. Aplikasi mengecek saldo dan informasi penutupan dulu, baru menutup rekening. Digital Banking saat ini memakai jalur baru dan jalur lama sekaligus untuk proses ini.","phase":"P4","notes":["Digital Banking memakai jalur baru dan jalur lama sekaligus untuk menutup rekening."],"tech":["Digital Banking memakai jalur MS (/account-closure v1.3) dan jalur SOA (/closeAccount, /closeAccountInfo) bersamaan.","Kategori /account-closure (Inquiry) dan /close-account-balance (Account Management) di workbook asal kemungkinan tertukar."],"steps":[{"title":"Cek saldo & info penutupan","items":[{"id":"o79","shared":false},{"id":"o80","shared":false}]},{"title":"Tutup rekening","items":[{"id":"o81","shared":false},{"id":"o82","shared":false},{"id":"o83","shared":false}]},{"title":"Cairkan produk berjangka dulu","items":[{"id":"o17","shared":true},{"id":"o18","shared":true}]}],"stats":{"ops":4,"apps":2,"baru":3,"lama":2,"lain":0}},{"code":"F10","name":"Kurs Mata Uang Asing","short":"Lihat kurs dan info mata uang","desc":"Menampilkan kurs mata uang asing dan informasi mata uang di berbagai aplikasi.","question":"Fungsi apa yang dipakai untuk kurs dan info mata uang, dan aplikasi mana yang memakainya?","story":"Kurs mata uang asing tampil di Digital Banking, IB Corporate, chatbot, dan aplikasi lain. Semuanya mengambil kurs dari jalur lama (SOA); belum ada versi sistem barunya.","phase":"P2","notes":["Semua fungsi kurs (dipakai 9 aplikasi) masih lewat sistem lama dan belum ada versi sistem barunya."],"tech":["currency-rate 100% SOA dan dipakai 9 channel. Ini dependency SOA yang paling luas dan belum ada versi microservice-nya.","Dugaan dari nama aplikasi di List of Channel: TVKurs dan SmartFX kemungkinan juga memakai kurs, tetapi belum di-assess.","Kandidat varian syariah (belum pasti milik MW): Currency-rate-syariah /exchangeRate (NanoBank, server legacy)."],"steps":[{"title":"Lihat kurs","items":[{"id":"o84","shared":false}]},{"title":"Lihat info mata uang","items":[{"id":"o85","shared":false},{"id":"o86","shared":false}]}],"stats":{"ops":3,"apps":9,"baru":0,"lama":10,"lain":0}},{"code":"F11","name":"Mitra, Teller & Open API","short":"Teller dan perusahaan mitra cek rekening, saldo, mutasi","desc":"Teller dan perusahaan mitra (sekuritas dan mitra B2B) mengecek rekening, saldo, dan mutasi lewat API yang sama.","question":"Fungsi apa yang dipakai teller dan perusahaan mitra, dan siapa saja pemakainya?","story":"Perusahaan mitra seperti MonetaPay mengecek saldo dan mengambil mutasi rekening secara otomatis lewat Open API standar SNAP. Teller juga mengecek rekening tujuan sebelum melakukan transfer keluar.","phase":"P5","notes":["Aplikasi teller konvensional dan syariah memakai fungsi yang persis sama.","Perusahaan mitra memakai Open API standar Bank Indonesia (SNAP)."],"tech":["Pega-Teller dan Pega-Teller-Syariah memakai satu endpoint SOA yang sama untuk inquiry transfer keluar.","/checkAccount memakai path /mirae/checkAccount, jadi kemungkinan juga dipakai Mirae-Sekuritas (belum di-assess).","Untuk SNAP, kolom arsitektur dan backend kosong di workbook asal. Di dokumen ini diisi dari pola host, dan kepemilikannya masih kontradiktif di Notes.","SNAP bank-statement v1.1 di gateway mengarah ke endpoint /v2.0 di backend."],"steps":[{"title":"Teller cek rekening tujuan","items":[{"id":"o87","shared":false}]},{"title":"Perusahaan sekuritas cek rekening","items":[{"id":"o88","shared":false}]},{"title":"Perusahaan mitra cek saldo","items":[{"id":"o89","shared":false}]},{"title":"Perusahaan mitra ambil mutasi","items":[{"id":"o90","shared":false},{"id":"o91","shared":false}]}],"stats":{"ops":4,"apps":13,"baru":13,"lama":3,"lain":0}}],"ops":{"o0":{"api":"Customer-Integration-Personal","ver":"v1.0","op":"/create","name":"Buat nomor nasabah baru (CIF)","expl":"Membuat nomor induk untuk nasabah perorangan yang baru pertama kali terdaftar.","sys":"baru","arch":"Microservice","backend":"mscustomerservice","bePlain":"mscustomerservice","host":"mscustomerservice-integration.prods.banksinarmas.com","endpoint":"/api/indiv/createCIF","params":"","cat":"Account Management","note":"Backend mscustomerservice (di luar 5 MS MW Account), kepemilikan perlu dikonfirmasi.","flow":"F1","step":2,"related":["F2"],"apps":[3,9,17]},"o1":{"api":"Customer-Konven","ver":"v1.0","op":"/syncCIF","name":"Cari atau buat nomor nasabah","expl":"Mencari nomor induk nasabah konvensional; kalau belum ada, otomatis dibuatkan.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/SyncCIFFindNCreate/Sync","params":"","cat":"Account Management","note":"Masih SOA. Customer-Syariah (BE IB Syariah) memakai URL yang persis sama, kandidat varian syariah.","flow":"F1","step":2,"related":["F7"],"apps":[4]},"o2":{"api":"Customer-Integration-Personal","ver":"v2.0","op":"/benef-owner","name":"Data pemilik dana sebenarnya","expl":"Data siapa pemilik dana yang sebenarnya, bagian dari pengenalan nasabah (KYC).","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v2.0/benef-owner","params":"","cat":"Inquiry","note":"Kategori di workbook asal: Inquiry.","flow":"F1","step":3,"related":[],"apps":[3,9]},"o3":{"api":"Customer-Integration-Personal","ver":"v1.0","op":"/benefOwner","name":"Data pemilik dana sebenarnya (versi 1.0)","expl":"Fungsi yang sama dengan \"Data pemilik dana sebenarnya\", memakai versi API sebelumnya (1.0).","sys":"baru","arch":"Microservice","backend":"mscustomerservice","bePlain":"mscustomerservice","host":"mscustomerservice-integration.prods.banksinarmas.com","endpoint":"/api/indiv/benefOwner","params":"","cat":"Inquiry","note":"Ejaan beda dengan v2.0 (/benefOwner vs /benef-owner) dan backend juga beda.","flow":"F1","step":3,"related":[],"apps":[4]},"o4":{"api":"Customer-Integration-Personal","ver":"v2.1","op":"/image","name":"Foto / dokumen nasabah","expl":"Foto atau dokumen milik nasabah, misalnya foto identitas atau tanda tangan (dugaan dari nama).","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/image","params":"","cat":"Account Management","note":"Apakah ini upload atau ambil gambar, perlu dicek ke API spec.","flow":"F1","step":3,"related":["F7"],"apps":[3]},"o5":{"api":"Customer-Integration-Personal","ver":"v2.1","op":"/consent/submit","name":"Simpan persetujuan nasabah","expl":"Menyimpan persetujuan nasabah, misalnya izin penggunaan data.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/maintenance/consent","params":"","cat":"Account Management","note":"Endpoint: /maintenance/consent.","flow":"F1","step":4,"related":["F7"],"apps":[0]},"o6":{"api":"Customer-Integration-Personal","ver":"v2.2","op":"/consent","name":"Lihat persetujuan nasabah","expl":"Melihat persetujuan apa saja yang sudah diberikan nasabah.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/inquiry-customer-consent","params":"cifNumber, partnerReferenceNo","cat":"Account Management","note":"Kategori di workbook asal: Account Management, padahal endpoint-nya inquiry.","flow":"F1","step":4,"related":[],"apps":[0]},"o7":{"api":"Account-Integration-Personal","ver":"v1.0","op":"/account-creation-saving","name":"Buka rekening tabungan","expl":"Membuka rekening tabungan baru untuk nasabah yang sudah punya nomor nasabah.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/account-creation-saving","params":"","cat":"Inquiry / Account Management","note":"Kategori tidak konsisten di workbook asal: Inquiry (Digital Banking, BOS) vs Account Management (UR, sys:default).","flow":"F2","step":2,"related":[],"apps":[0,3,9,15]},"o8":{"api":"Account-Integration-Personal","ver":"v2.0","op":"/other/create","name":"Buka rekening jenis lain","expl":"Membuka rekening selain tabungan biasa (jenis produknya perlu dikonfirmasi).","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/other/create","params":"","cat":"Account Management","note":"Jenis produk persisnya perlu dikonfirmasi.","flow":"F2","step":2,"related":[],"apps":[3]},"o9":{"api":"Account-Integration-Personal","ver":"v1.3","op":"/investment/create","name":"Buka rekening investasi (RDN)","expl":"Membuka rekening untuk investasi saham/efek, dipakai sistem RDN.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/partner/create","params":"","cat":"Account Management","note":"Endpoint: /partner/create.","flow":"F2","step":2,"related":[],"apps":[17]},"o10":{"api":"account-deposito","ver":"v1.1","op":"/rate","name":"Cek bunga deposito","expl":"Menghitung bunga deposito sesuai nominal, mata uang, dan jangka waktu.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/depo/rate/ib","params":"amount, currency, id, term, partnerReferenceNo","cat":"Account Management","note":"Parameter: amount, currency, id, term (mis. 01M). Kategori asal: Account Management.","flow":"F3","step":1,"related":[],"apps":[0]},"o11":{"api":"accounts-deposit","ver":"v1.0","op":"/rates","name":"Tabel bunga deposito","expl":"Menampilkan daftar bunga deposito per jangka waktu (dipakai chatbot).","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/depositoRate/konven","params":"periodicId","cat":"Inquiry","note":"Sumber rate kedua (SOA) selain account-deposito /rate.","flow":"F3","step":1,"related":[],"apps":[23]},"o12":{"api":"account-deposito","ver":"v1.0","op":"/createDeposito","name":"Buka deposito (jalur lama)","expl":"Membuka deposito lewat sistem lama.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/corebankingR20/createDeposito","params":"","cat":"Account Management","note":"Masih dipanggil Digital Banking bersamaan dengan v1.1.","flow":"F3","step":2,"related":["F2"],"apps":[0]},"o13":{"api":"account-deposito","ver":"v1.1","op":"/createDeposito","name":"Buka deposito (jalur baru)","expl":"Membuka deposito lewat sistem baru.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/depo/ib/create","params":"","cat":"Account Management","note":"Pengganti v1.0.","flow":"F3","step":2,"related":["F2"],"apps":[0]},"o14":{"api":"account-savings","ver":"v1.0","op":"/createPlan","name":"Buat rencana tabungan","expl":"Membuat rencana tabungan (saving plan) untuk nasabah.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/corebankingR20/createSavingPlan","params":"","cat":"Account Management","note":"Masih SOA (corebankingR20/createSavingPlan).","flow":"F3","step":2,"related":["F2"],"apps":[0]},"o15":{"api":"account-savings","ver":"v1.0","op":"/createSaving","name":"Buka tabungan berencana","expl":"Membuka rekening tabungan untuk rencana tabungan (dugaan dari nama).","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/corebankingR20/createSaving","params":"","cat":"Account Management","note":"Masih SOA.","flow":"F3","step":2,"related":[],"apps":[0]},"o16":{"api":"accounts-integration-simas-tara","ver":"v1.0","op":"/contract-detail","name":"Lihat kontrak Simas Tara","expl":"Melihat detail kontrak produk Simas Tara.","sys":"lain","arch":"Tidak diketahui","backend":"Tidak diketahui","bePlain":"alamat tidak tercatat","host":"(kosong)","endpoint":"(kosong)","params":"","cat":"Inquiry","note":"Native URL kosong (dipanggil lewat sys:defaultApplication); arsitektur belum diketahui.","flow":"F3","step":3,"related":[],"apps":[15]},"o17":{"api":"account-savings","ver":"v2.0","op":"/break","name":"Cairkan tabungan berencana lebih awal","expl":"Mencairkan tabungan berencana sebelum jatuh tempo.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/ssp/ib/break","params":"","cat":"Account Management","note":"Endpoint: /ssp/ib/break.","flow":"F3","step":4,"related":["F9"],"apps":[0]},"o18":{"api":"accounts-integration-simas-tara","ver":"v1.0","op":"/break","name":"Cairkan Simas Tara lebih awal","expl":"Mencairkan produk Simas Tara sebelum jatuh tempo.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/break-simas-tara","params":"","cat":"Account Management","note":"","flow":"F3","step":4,"related":["F9"],"apps":[0]},"o19":{"api":"customer-data","ver":"v3.0","op":"/profile/inquiry/","name":"Cek profil nasabah","expl":"Mengambil profil nasabah: versi ringkas untuk pengecekan, atau versi lengkap.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.1/profile","params":"type","cat":"Inquiry","note":"Pemakai terbanyak (10 channel). type=full: BOS, Pega LOS, BE-CRS; type=check: 6 channel lain.","flow":"F4","step":1,"related":["F1","F2"],"apps":[0,3,7,8,9,10,11,15,17,27]},"o20":{"api":"customer-data","ver":"v3.1","op":"/profile/inquiry/","name":"Cari nasabah lewat nomor HP","expl":"Mencari profil nasabah berdasarkan nomor HP.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/customer-profile","params":"mobilePhone, partnerReferenceNo","cat":"Inquiry","note":"Endpoint beda dari v3.0: /customer-profile?mobilePhone=…","flow":"F4","step":1,"related":[],"apps":[0]},"o21":{"api":"customer-data","ver":"v3.2","op":"/profile/inquiry/","name":"Cek profil nasabah (versi terbaru)","expl":"Mengambil profil lengkap nasabah, versi terbaru.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.2/profile","params":"partnerReferenceNo, type","cat":"Inquiry","note":"Endpoint: /api/v1.2/profile.","flow":"F4","step":1,"related":[],"apps":[8]},"o22":{"api":"Customer-Integration-Personal","ver":"v2.0","op":"/customer-detail","name":"Detail nasabah dari nomor CIF","expl":"Mengambil data lengkap nasabah dari nomor induknya.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/customer-detail","params":"cifNumber, partnerReferenceNo","cat":"Inquiry","note":"","flow":"F4","step":1,"related":[],"apps":[0]},"o23":{"api":"Customer-Integration-Personal","ver":"v2.1","op":"/profile/core","name":"Profil nasabah dari nomor rekening","expl":"Mengambil data inti nasabah dari nomor rekeningnya.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/profile/core","params":"accountNumber, partnerReferenceNo","cat":"Inquiry","note":"","flow":"F4","step":1,"related":[],"apps":[0,13,21]},"o24":{"api":"Customer-Integration-Personal","ver":"v2.2","op":"/customer","name":"Data nasabah","expl":"Mengambil data nasabah (dipakai aplikasi PBK).","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/customer","params":"","cat":"Inquiry","note":"","flow":"F4","step":1,"related":[],"apps":[7]},"o25":{"api":"Customer-Integration-Personal","ver":"v2.2","op":"/relation-manager","name":"Siapa petugas RM nasabah","expl":"Melihat relationship manager (petugas bank) yang menangani nasabah.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/relation-manager","params":"cif","cat":"Inquiry","note":"","flow":"F4","step":2,"related":[],"apps":[0]},"o26":{"api":"customer-data","ver":"v3.1","op":"/profile","name":"Profil nasabah untuk pengajuan kredit","expl":"Profil nasabah yang dipakai saat menilai pengajuan kredit.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/profile","params":"partnerReferenceNo","cat":"Inquiry","note":"","flow":"F4","step":2,"related":[],"apps":[8,14]},"o27":{"api":"customer-management-digital","ver":"v1.0","op":"/getDetailCustomer","name":"Detail nasabah dari sistem iBank lama","expl":"Mengambil detail nasabah dari server lama iBank. Menurut laporan SLO 2026, fungsi ini selalu gagal.","sys":"lain","arch":"Legacy","backend":"adminibank (legacy)","bePlain":"server lama adminibank","host":"adminibank.banksinarmas.com:443","endpoint":"/ibank/rest/integratedDesktop/getDetailCustomer","params":"","cat":"Inquiry","note":"Menurut Notes: success rate 0% di SLO 2026 (281 request, semua HTTP 500). Tidak tercantum di summary workbook asal.","flow":"F4","step":2,"related":[],"apps":[16]},"o28":{"api":"customer-data","ver":"v3.1","op":"/profile/payroll","name":"Data gaji nasabah","expl":"Data penghasilan (payroll) nasabah untuk menilai kemampuan bayar kredit.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/profile/payroll","params":"partnerReferenceNo","cat":"Inquiry","note":"","flow":"F4","step":3,"related":[],"apps":[14]},"o29":{"api":"customer-data-loan","ver":"v1.0","op":"/debtor","name":"Data nasabah sebagai peminjam","expl":"Data nasabah sebagai debitur untuk proses kredit.","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/debtor","params":"partnerReferenceNo","cat":"Inquiry","note":"","flow":"F4","step":3,"related":[],"apps":[14]},"o30":{"api":"customer-data-loan","ver":"v1.0","op":"/history","name":"Riwayat nasabah untuk kredit","expl":"Riwayat data nasabah untuk analisa kredit (dugaan: riwayat pinjaman).","sys":"baru","arch":"Microservice","backend":"mscustomer","bePlain":"mscustomer","host":"mscustomer-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/history","params":"partnerReferenceNo","cat":"Inquiry","note":"","flow":"F4","step":3,"related":[],"apps":[8]},"o31":{"api":"customer-data","ver":"v2.0","op":"/scoring","name":"Data CRM / skor nasabah","expl":"Mengambil data CRM atau skor nasabah (dipakai aplikasi Pega CRM).","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/CRM/GetData","params":"","cat":"Inquiry","note":"Masih SOA dan berjalan di 2 host (10.22.11.100 dan .101).","flow":"F4","step":3,"related":[],"apps":[10]},"o32":{"api":"customer-data","ver":"v3.1","op":"/search/creation-date","name":"Cari data menurut tanggal dibuat","expl":"Mencari data rekening/portofolio yang dibuat dalam rentang tanggal tertentu (dipakai sistem referral).","sys":"baru","arch":"Microservice","backend":"msportofolio","bePlain":"msportofolio","host":"ms-portfolio-integration.prods.banksinarmas.com","endpoint":"/portfolio/v1.0/inquiry/by-date","params":"","cat":"Inquiry","note":"Backend msportofolio. Dipakai BE-CRS (Customer Referral System).","flow":"F4","step":4,"related":[],"apps":[11]},"o33":{"api":"Customer-Integration-Personal","ver":"v2.0","op":"/account-detail-by-cif","name":"Daftar semua rekening nasabah","expl":"Menampilkan semua rekening milik satu nasabah.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/account-detail-by-cif","params":"cifNumber, partnerReferenceNo","cat":"Inquiry","note":"Nama API-nya Customer, tetapi backend-nya msaccount.","flow":"F5","step":1,"related":["F2"],"apps":[0,8,15]},"o34":{"api":"Account-Management","ver":"v2.0","op":"/getDetail","name":"Detail rekening","expl":"Menampilkan detail satu rekening, misalnya status dan jenis produknya.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"account-management-integration.prods.banksinarmas.com","endpoint":"/restv2/BSimMSAccountInquiry/detail","params":"","cat":"Inquiry","note":"Endpoint sama dengan v2.2.","flow":"F5","step":2,"related":[],"apps":[2,20]},"o35":{"api":"Account-Management","ver":"v2.2","op":"/getDetail","name":"Detail rekening (versi 2.2)","expl":"Sama dengan \"Detail rekening\", versi lebih baru.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"account-management-integration.prods.banksinarmas.com","endpoint":"/restv2/BSimMSAccountInquiry/detail","params":"","cat":"Inquiry","note":"Endpoint sama dengan v2.0.","flow":"F5","step":2,"related":["F2"],"apps":[0,1]},"o36":{"api":"Account-Integration-Personal","ver":"v2.0","op":"/account/balance","name":"Cek saldo per mata uang","expl":"Menampilkan saldo rekening untuk mata uang tertentu.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/currency/account/balance","params":"accountNumber, currency, partnerReferenceNo","cat":"Inquiry","note":"Parameter: accountNumber, currency.","flow":"F5","step":2,"related":[],"apps":[15,16]},"o37":{"api":"Account-Management","ver":"v2.2","op":"/multiaccount/getDetailAndBalance","name":"Detail & saldo banyak rekening sekaligus","expl":"Menampilkan detail dan saldo beberapa rekening sekaligus (dipakai internet banking perusahaan).","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"account-management-integration.prods.banksinarmas.com","endpoint":"/restv2/BSimMSAccountInquiry/multiacc/detailandbalance","params":"","cat":"Inquiry","note":"Dipakai IB Corporate.","flow":"F5","step":2,"related":[],"apps":[5]},"o38":{"api":"Account-Management","ver":"v2.2","op":"/multicif/getDetailAndBalance","name":"Detail & saldo banyak nasabah sekaligus","expl":"Menampilkan detail dan saldo rekening dari beberapa nasabah sekaligus.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"account-management-integration.prods.banksinarmas.com","endpoint":"/restv2/BSimMSAccountInquiry/multicif/detailandbalance","params":"","cat":"Inquiry","note":"Dipakai IB Corporate.","flow":"F5","step":2,"related":[],"apps":[5]},"o39":{"api":"Account-Data","ver":"1.0","op":"/portfolio","name":"Ringkasan semua produk nasabah","expl":"Menampilkan semua produk yang dimiliki nasabah beserta saldonya.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v2.0/customer-portfolio","params":"accountNo, partnerReferenceNo","cat":"Inquiry","note":"Versi gateway 1.0, tetapi endpoint backend /api/v2.0/customer-portfolio.","flow":"F5","step":3,"related":[],"apps":[3,9,15,21]},"o40":{"api":"customer-data","ver":"v2.0","op":"/portfolioByAccountNo","name":"Ringkasan produk dari nomor rekening","expl":"Menampilkan produk nasabah berdasarkan nomor rekening.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/customerData/getCustomerPortfolioByAccountNo","params":"","cat":"Inquiry","note":"Masih SOA.","flow":"F5","step":3,"related":[],"apps":[0,4]},"o41":{"api":"customer-data","ver":"v2.0","op":"/portfolio/saving","name":"Ringkasan tabungan nasabah","expl":"Menampilkan tabungan nasabah beserta penandanya (konvensional).","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/customerData/getCustomerPortfolioSavingFlag","params":"","cat":"Inquiry","note":"Masih SOA.","flow":"F5","step":3,"related":[],"apps":[0]},"o42":{"api":"customer-data-syariah","ver":"v1.0","op":"/portfolio/saving","name":"Ringkasan tabungan nasabah (syariah)","expl":"Sama dengan \"Ringkasan tabungan nasabah\", untuk produk syariah.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/customerDataSyariah/getCustomerPortfolioSavingFlag","params":"","cat":"Account Management","note":"Masih SOA. Kategori asal: Account Management (versi konven: Inquiry).","flow":"F5","step":3,"related":[],"apps":[2]},"o43":{"api":"Account-Integration-Personal","ver":"v1.3","op":"/portfolio/info","name":"Info penanda produk nasabah","expl":"Menampilkan detail penanda (flag) pada portofolio nasabah.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/inquiry-portfolio-flag-details","params":"","cat":"Inquiry","note":"Endpoint: inquiry-portfolio-flag-details.","flow":"F5","step":3,"related":[],"apps":[0]},"o44":{"api":"customer-data-external","ver":"v1.0","op":"/portfolio/detail","name":"Detail produk nasabah untuk call center","expl":"Menampilkan detail produk nasabah untuk petugas contact center.","sys":"baru","arch":"Microservice","backend":"msportofolio","bePlain":"msportofolio","host":"ms-portfolio-integration.prods.banksinarmas.com","endpoint":"/portfolio/v1.0/customer-portfolio-detail","params":"","cat":"Inquiry","note":"Backend msportofolio.","flow":"F5","step":3,"related":[],"apps":[18]},"o45":{"api":"customer-data","ver":"v3.1","op":"/portfolio","name":"Ringkasan produk untuk pengajuan kredit","expl":"Portofolio nasabah yang dipakai saat menilai pengajuan kredit.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/los/customer-portfolio","params":"partnerReferenceNo","cat":"Inquiry","note":"Endpoint /los/customer-portfolio; backend msaccount.","flow":"F5","step":4,"related":[],"apps":[8]},"o46":{"api":"customer-data","ver":"v3.1","op":"/portfolio/eod","name":"Ringkasan produk posisi akhir hari","expl":"Portofolio nasabah per akhir hari, untuk pengajuan kredit.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/los/customer-portfolio-eod","params":"partnerReferenceNo","cat":"Inquiry","note":"Endpoint /los/customer-portfolio-eod.","flow":"F5","step":4,"related":[],"apps":[8]},"o47":{"api":"Customer-Integration-Personal","ver":"v2.0","op":"/customer-portfolio-eom-summary","name":"Ringkasan produk posisi akhir bulan","expl":"Ringkasan portofolio nasabah per akhir bulan.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/customer-portfolio-eom-summary","params":"cifNumber, partnerReferenceNo","cat":"Inquiry","note":"","flow":"F5","step":4,"related":[],"apps":[0]},"o48":{"api":"Account-Management","ver":"v1.0","op":"/getTodayStatement","name":"Mutasi hari ini (jalur lama)","expl":"Daftar transaksi hari ini, diambil lewat sistem lama.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/AccountStatementEDW/Today","params":"","cat":"Statement & Report","note":"Hanya IB Corporate yang masih memakai.","flow":"F6","step":1,"related":[],"apps":[5]},"o49":{"api":"Account-Management","ver":"v2.0","op":"/getTodayStatement","name":"Mutasi hari ini","expl":"Daftar transaksi hari ini.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"account-management-integration.prods.banksinarmas.com","endpoint":"/restv2/BSimMSAccountInquiry/statement/today","params":"","cat":"Statement & Report","note":"","flow":"F6","step":1,"related":[],"apps":[0,2]},"o50":{"api":"Account-Management","ver":"v1.0","op":"/getStatementByDate","name":"Mutasi per tanggal (jalur lama)","expl":"Daftar transaksi dalam rentang tanggal tertentu, lewat sistem lama.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/AccountStatementEDW/DateRange","params":"","cat":"Statement & Report","note":"Hanya IB Corporate yang masih memakai.","flow":"F6","step":2,"related":[],"apps":[5]},"o51":{"api":"Account-Management","ver":"v2.0","op":"/getStatementByDate","name":"Mutasi per tanggal","expl":"Daftar transaksi dalam rentang tanggal tertentu.","sys":"baru","arch":"Microservice","backend":"msreport / msaccount","bePlain":"msreport / msaccount","host":"ms-report-integration.prods.banksinarmas.com ; account-management-integration.prods.banksinarmas.com","endpoint":"/statement/v1.0/date-range | /restv2/BSimMSAccountInquiry/statement/dateRange","params":"","cat":"Statement & Report","note":"Backend beda per channel: NanoBank → msaccount; Digital Banking, Pega LOS, Pega Complain, middleware → msreport.","flow":"F6","step":2,"related":[],"apps":[0,2,8,16,25]},"o52":{"api":"Account-Management","ver":"v2.0","op":"/statementDetail","name":"Detail satu transaksi","expl":"Menampilkan rincian satu transaksi di mutasi.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"account-management-integration.prods.banksinarmas.com","endpoint":"/restv2/BSimMSAccountInquiry/statement/detail","params":"","cat":"Statement & Report","note":"","flow":"F6","step":3,"related":[],"apps":[0]},"o53":{"api":"Account-Management","ver":"v2.2","op":"/transaction/detail","name":"Detail transaksi dari nomor referensi","expl":"Mencari rincian transaksi dari nomor referensinya, untuk menangani komplain.","sys":"baru","arch":"Microservice","backend":"snap-account-management","bePlain":"snap-account-management","host":"snap-account-management-integration.prods.banksinarmas.com","endpoint":"/v1.0/FTReference","params":"msgId, stmtId","cat":"Inquiry","note":"Backend snap-account-management (di luar 5 MS MW Account).","flow":"F6","step":3,"related":[],"apps":[16]},"o54":{"api":"Account-Integration-Personal","ver":"v2.0","op":"/activities","name":"Aktivitas rekening","expl":"Menampilkan daftar aktivitas pada rekening.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/account-activities","params":"","cat":"Account Management","note":"Kategori asal: Account Management.","flow":"F6","step":4,"related":[],"apps":[0]},"o55":{"api":"Customer-Integration-Personal","ver":"v1.0","op":"/maintenance","name":"Ubah data nasabah","expl":"Mengubah data diri nasabah yang tersimpan di nomor induknya (CIF).","sys":"baru","arch":"Microservice","backend":"mscustomerservice","bePlain":"mscustomerservice","host":"mscustomerservice-integration.prods.banksinarmas.com","endpoint":"/api/indiv/maintenanceCIF","params":"","cat":"Account Management","note":"Backend mscustomerservice (di luar 5 MS MW Account).","flow":"F7","step":1,"related":[],"apps":[4,15,17]},"o56":{"api":"Account-Integration-Personal","ver":"v1.0","op":"/account-maintenance-saving","name":"Ubah data rekening tabungan","expl":"Mengubah data atau pengaturan rekening tabungan.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/account-maintenance-saving","params":"","cat":"Account Management","note":"","flow":"F7","step":2,"related":[],"apps":[3]},"o57":{"api":"Account-Integration-Personal","ver":"v2.0","op":"/other/maintenance","name":"Ubah data rekening jenis lain","expl":"Mengubah data rekening selain tabungan biasa.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/other/maintenance","params":"","cat":"Account Management","note":"","flow":"F7","step":2,"related":[],"apps":[3]},"o58":{"api":"Account-Integration-Personal","ver":"v1.2","op":"/product-linkage","name":"Produk yang terhubung ke rekening","expl":"Melihat produk atau fasilitas yang terhubung ke rekening, termasuk kemungkinan instruksi rutin (standing order).","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/product-linkage-inquiry","params":"accountNumber, partnerReferenceNo, stoFlag","cat":"Account Management","note":"Parameter stoFlag (kemungkinan flag standing order). Endpoint: product-linkage-inquiry.","flow":"F7","step":3,"related":[],"apps":[3]},"o59":{"api":"Account-Integration-Personal","ver":"v1.3","op":"/product-linkage","name":"Produk yang terhubung ke rekening (versi 1.3)","expl":"Sama dengan versi 1.2, versi lebih baru.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/product-linkage-inquiry","params":"accountNumber, stoFlag, partnerReferenceNo","cat":"Account Management","note":"Endpoint sama dengan v1.2.","flow":"F7","step":3,"related":[],"apps":[0]},"o60":{"api":"Account-Integration-Personal","ver":"v1.0","op":"/activate-dormant","name":"Aktifkan rekening tidur","expl":"Mengaktifkan kembali rekening yang tidak aktif karena lama tidak dipakai (dormant).","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/activate-dormant","params":"","cat":"Account Management","note":"Fungsinya serupa Account-Management /releaseDormant (SOA).","flow":"F7","step":4,"related":[],"apps":[3]},"o61":{"api":"Account-Management","ver":"v1.0","op":"/releaseDormant","name":"Aktifkan rekening tidur (jalur lama)","expl":"Mengaktifkan rekening tidur lewat sistem lama.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/releaseDormantAccount","params":"","cat":"Account Management","note":"Versi MS yang serupa: Account-Integration-Personal /activate-dormant (BOS).","flow":"F7","step":4,"related":[],"apps":[0,5]},"o62":{"api":"Account-Integration-Personal","ver":"v1.0","op":"/credit-interest","name":"Kredit bunga rekening (dugaan)","expl":"Kemungkinan memproses atau mengatur bunga yang masuk ke rekening; perlu dicek ke tim.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/credit-interest","params":"","cat":"Account Management","note":"4 versi /credit-interest mengarah ke 2 endpoint berbeda, cek API spec.","flow":"F7","step":5,"related":[],"apps":[3]},"o63":{"api":"Account-Integration-Personal","ver":"v1.1","op":"/credit-interest","name":"Lihat bunga yang diterima","expl":"Melihat informasi bunga yang sudah masuk ke rekening.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/inq-credit-interest","params":"accountNo, partnerReferenceNo","cat":"Account Management","note":"","flow":"F7","step":5,"related":[],"apps":[3]},"o64":{"api":"Account-Integration-Personal","ver":"v1.2","op":"/credit-interest","name":"Kredit bunga rekening (dugaan)","expl":"Sama dengan versi 1.0, dipakai sistem referral (BE-CRS); perlu dicek ke tim.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/credit-interest","params":"","cat":"Account Management","note":"Untuk CRS: pastikan ini posting atau inquiry.","flow":"F7","step":5,"related":[],"apps":[11]},"o65":{"api":"Account-Integration-Personal","ver":"v2.0","op":"/credit-interest","name":"Lihat bunga yang diterima (per halaman)","expl":"Melihat informasi bunga yang masuk ke rekening, ditampilkan per halaman.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/inq-credit-interest","params":"accountNo, page, partnerReferenceNo, size","cat":"Account Management","note":"","flow":"F7","step":5,"related":[],"apps":[3,15]},"o66":{"api":"Account-Integration-Personal","ver":"v1.0","op":"/lock-amount","name":"Tahan sebagian saldo","expl":"Menahan sejumlah saldo supaya sementara tidak bisa dipakai.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/lock-amount","params":"","cat":"Account Management","note":"","flow":"F8","step":1,"related":[],"apps":[3]},"o67":{"api":"account-service-internal","ver":"v1.0","op":"/lockAmount","name":"Tahan sebagian saldo (jalur lama)","expl":"Menahan sejumlah saldo lewat sistem lama.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/LockAccount/lock","params":"","cat":"Account Management","note":"Endpoint LockAccount/lock.","flow":"F8","step":1,"related":[],"apps":[7]},"o68":{"api":"Account-Management","ver":"v1.0","op":"/lockAccount","name":"Kunci dana / rekening (jalur lama)","expl":"Mengunci dana atau rekening lewat sistem lama.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/LockAccount/lock-account","params":"","cat":"Account Management","note":"Endpoint LockAccount/lock-account.","flow":"F8","step":1,"related":[],"apps":[0]},"o69":{"api":"Account-Integration-Personal","ver":"v1.1","op":"/locked-event","name":"Daftar saldo yang ditahan","expl":"Melihat daftar penahanan saldo pada rekening.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/inq-locked-event","params":"accountNumber, partnerReferenceNo","cat":"Account Management","note":"Kategori asal: Account Management, padahal inquiry.","flow":"F8","step":2,"related":[],"apps":[3]},"o70":{"api":"Account-Management","ver":"v2.1","op":"/detailLockAccNo","name":"Detail saldo yang ditahan","expl":"Melihat rincian penahanan saldo dari nomor rekening (sistem lama).","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/LockAccount/detail-lock-by-accno","params":"","cat":"Inquiry","note":"","flow":"F8","step":2,"related":[],"apps":[0]},"o71":{"api":"account-service-internal","ver":"v1.0","op":"/detailLockDana","name":"Detail dana yang ditahan","expl":"Melihat rincian dana yang sedang ditahan (sistem lama).","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/detailLockDana/getDetailLockDana","params":"","cat":"Account Management","note":"","flow":"F8","step":2,"related":[],"apps":[12]},"o72":{"api":"Account-Management","ver":"v1.0","op":"/inquiryCashback","name":"Cek cashback","expl":"Mengecek cashback. Letaknya di modul penahanan dana, jadi kemungkinan terkait dana yang ditahan.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/LockAccount/inquiry-cashback","params":"","cat":"Inquiry","note":"v1.0 dan v2.1 memanggil endpoint yang sama.","flow":"F8","step":2,"related":[],"apps":[0]},"o73":{"api":"Account-Management","ver":"v2.1","op":"/inquiryCashback","name":"Cek cashback (versi 2.1)","expl":"Sama dengan \"Cek cashback\", versi lebih baru.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/LockAccount/inquiry-cashback","params":"","cat":"Inquiry","note":"Endpoint sama dengan v1.0.","flow":"F8","step":2,"related":[],"apps":[0]},"o74":{"api":"Account-Integration-Personal","ver":"v1.1","op":"/break-lock-amount","name":"Lepas saldo yang ditahan","expl":"Membebaskan kembali saldo yang sebelumnya ditahan.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/break-lock-amount","params":"","cat":"Account Management","note":"","flow":"F8","step":3,"related":[],"apps":[3]},"o75":{"api":"account-service-internal","ver":"v1.0","op":"/unlockAmount","name":"Lepas saldo yang ditahan (jalur lama)","expl":"Membebaskan saldo yang ditahan lewat sistem lama.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/LockAccount/reverse","params":"","cat":"Account Management","note":"Endpoint LockAccount/reverse.","flow":"F8","step":3,"related":[],"apps":[7]},"o76":{"api":"Account-Integration-Personal","ver":"v1.2","op":"/block","name":"Blokir rekening","expl":"Memblokir rekening sehingga tidak bisa dipakai bertransaksi.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/block","params":"","cat":"Account Management","note":"Dipakai Pega Complain Handling.","flow":"F8","step":4,"related":[],"apps":[16]},"o77":{"api":"Account-Integration-Personal","ver":"v2.0","op":"/other/block","name":"Blokir rekening jenis lain","expl":"Memblokir rekening selain tabungan biasa.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/other/block","params":"","cat":"Account Management","note":"","flow":"F8","step":4,"related":[],"apps":[3]},"o78":{"api":"Account-Integration-Personal","ver":"v2.0","op":"/block/info","name":"Cek status blokir","expl":"Melihat apakah rekening sedang diblokir beserta detailnya.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/currency/block/info","params":"accountNumber, partnerReferenceNo, currency","cat":"Account Management","note":"Kategori asal: Account Management, padahal inquiry.","flow":"F8","step":5,"related":[],"apps":[15,16]},"o79":{"api":"Account-Integration-Personal","ver":"v1.2","op":"/close-account-balance","name":"Cek saldo sebelum tutup","expl":"Mengecek saldo terakhir sebelum rekening ditutup.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/account-balance-inquiry","params":"","cat":"Account Management","note":"Endpoint account-balance-inquiry; kategori asal Account Management (kemungkinan tertukar dengan /account-closure).","flow":"F9","step":1,"related":[],"apps":[3]},"o80":{"api":"Account-Management","ver":"v1.0","op":"/closeAccountInfo","name":"Info sebelum tutup rekening (jalur lama)","expl":"Mengambil informasi yang dibutuhkan sebelum rekening ditutup, lewat sistem lama.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/accountRest/closeAccountInfo","params":"","cat":"Account Management","note":"","flow":"F9","step":1,"related":[],"apps":[0]},"o81":{"api":"Account-Integration-Personal","ver":"v1.2","op":"/account-closure","name":"Tutup rekening","expl":"Menutup rekening nasabah.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/account-closure","params":"","cat":"Inquiry","note":"Kategori asal: Inquiry (kemungkinan tertukar).","flow":"F9","step":2,"related":[],"apps":[3]},"o82":{"api":"Account-Integration-Personal","ver":"v1.3","op":"/account-closure","name":"Tutup rekening (versi 1.3)","expl":"Sama dengan \"Tutup rekening\", versi lebih baru.","sys":"baru","arch":"Microservice","backend":"msaccount","bePlain":"msaccount","host":"msaccount-integration.prods.banksinarmas.com","endpoint":"/api/v1.0/account-closure","params":"","cat":"Inquiry","note":"Endpoint sama dengan v1.2.","flow":"F9","step":2,"related":[],"apps":[0]},"o83":{"api":"Account-Management","ver":"v1.0","op":"/closeAccount","name":"Tutup rekening (jalur lama)","expl":"Menutup rekening lewat sistem lama.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/accountRest/closeAccount","params":"","cat":"Account Management","note":"Digital Banking juga memakai jalur MS (/account-closure v1.3).","flow":"F9","step":2,"related":[],"apps":[0]},"o84":{"api":"currency-rate","ver":"1.0.0","op":"/exchangeRates","name":"Lihat kurs mata uang asing","expl":"Menampilkan kurs mata uang asing.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/corebanking/exchangeRates","params":"channel, client, refNum, filterDate","cat":"Inquiry","note":"Dipakai 7 channel; 100% SOA, belum ada versi microservice.","flow":"F10","step":1,"related":[],"apps":[0,5,9,15,22,23,26]},"o85":{"api":"currency-rate","ver":"1.0.0","op":"/currencyInfo","name":"Info mata uang","expl":"Menampilkan informasi tentang mata uang.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/corebanking/getCurrencyInfo","params":"channel, refNum","cat":"Inquiry","note":"","flow":"F10","step":2,"related":[],"apps":[8,15]},"o86":{"api":"currency-rate","ver":"1.0.0","op":"/currencyInfoISO","name":"Kode mata uang internasional","expl":"Menampilkan kode mata uang standar internasional (ISO), misalnya USD atau IDR.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/corebanking/getISO","params":"channel","cat":"Inquiry","note":"","flow":"F10","step":2,"related":[],"apps":[1]},"o87":{"api":"account-service-internal","ver":"v1.0","op":"/inquiry","name":"Cek rekening sebelum transfer","expl":"Teller mengecek rekening sebelum melakukan transfer keluar.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/restv2/outgoingTransferHandlerRest/inquiry","params":"","cat":"Inquiry","note":"Pega-Teller & Pega-Teller-Syariah memanggil endpoint SOA yang sama persis.","flow":"F11","step":1,"related":[],"apps":[6,19]},"o88":{"api":"accounts-service-external","ver":"v1.0","op":"/checkAccount","name":"Cek rekening untuk perusahaan sekuritas","expl":"Memvalidasi rekening untuk perusahaan sekuritas mitra.","sys":"lama","arch":"SOA","backend":"SOA 10.22.11.100","bePlain":"server SOA 10.22.11.100","host":"10.22.11.100:7737","endpoint":"/mirae/checkAccount","params":"","cat":"Inquiry","note":"Path /mirae/checkAccount; kemungkinan juga dipakai Mirae-Sekuritas (belum di-assess).","flow":"F11","step":2,"related":[],"apps":[24]},"o89":{"api":"SNAP-in-b2b-accounts-balance","ver":"v1.0","op":"/balance-inquiry","name":"Cek saldo oleh perusahaan mitra","expl":"Perusahaan mitra mengecek saldo rekening secara otomatis lewat Open API standar Bank Indonesia (SNAP).","sys":"baru","arch":"Microservice","backend":"snap-balance-service","bePlain":"snap-balance-service","host":"snap-balance-service-integration.prods.banksinarmas.com","endpoint":"/v1.0/b2b/balance-inquiry","params":"","cat":"Inquiry","note":"Arsitektur & backend diisi dari pola host (kosong di workbook asal).","flow":"F11","step":3,"related":[],"apps":[15,29,30,31,32,33,36]},"o90":{"api":"SNAP-in-b2b-accounts-history","ver":"v1.0","op":"/bank-statement","name":"Mutasi untuk perusahaan mitra","expl":"Perusahaan mitra mengambil mutasi rekening lewat Open API SNAP.","sys":"baru","arch":"Microservice","backend":"snap-account-management","bePlain":"snap-account-management","host":"snap-account-management-integration.prods.banksinarmas.com","endpoint":"/v1.0/b2b/bank-statement","params":"","cat":"Report And Statement","note":"URL di Summary workbook asal salah (berisi URL balance-inquiry); di sini memakai URL dari sheet API Banking.","flow":"F11","step":4,"related":["F6"],"apps":[29,35]},"o91":{"api":"SNAP-in-b2b-accounts-history","ver":"v1.1","op":"/bank-statement","name":"Mutasi untuk perusahaan mitra (versi 1.1)","expl":"Sama dengan versi 1.0, versi lebih baru.","sys":"baru","arch":"Microservice","backend":"snap-account-management","bePlain":"snap-account-management","host":"snap-account-management-integration.prods.banksinarmas.com","endpoint":"/v2.0/b2b/bank-statement","params":"","cat":"Report And Statement","note":"Versi gateway 1.1 mengarah ke endpoint backend /v2.0/b2b/bank-statement.","flow":"F11","step":4,"related":["F6"],"apps":[28,29,34,36]}},"apps":[{"id":0,"name":"Digital Banking","short":"Digital Banking","group":"internal","desc":"Aplikasi digital banking untuk nasabah. Pemakai terbesar (±66% lalu lintas API Gateway).","traffic":470034471,"uses":["o5","o6","o7","o10","o12","o13","o14","o15","o17","o18","o22","o23","o19","o20","o25","o33","o35","o43","o41","o40","o47","o49","o51","o52","o54","o59","o61","o68","o72","o70","o73","o80","o82","o83","o84"],"flows":["F1","F2","F3","F4","F5","F6","F7","F8","F9","F10"],"baru":22,"lama":13,"lain":0,"apis":8,"fns":32},{"id":1,"name":"SOA","short":"SOA","group":"internal","desc":"Aplikasi internal yang di API Gateway bernama \"SOA\".","traffic":17760194,"uses":["o35","o86"],"flows":["F5","F10"],"baru":1,"lama":1,"lain":0,"apis":2,"fns":2},{"id":2,"name":"NanoBank","short":"NanoBank","group":"internal","desc":"Aplikasi NanoBank.","traffic":12285038,"uses":["o34","o42","o49","o51"],"flows":["F5","F6"],"baru":3,"lama":1,"lain":0,"apis":2,"fns":4},{"id":3,"name":"BOS","short":"BOS","group":"internal","desc":"Aplikasi internal BOS. Paling banyak memakai fungsi buka & ubah rekening, semuanya lewat sistem baru.","traffic":3516546,"uses":["o0","o2","o4","o7","o8","o19","o39","o56","o57","o58","o60","o62","o63","o65","o66","o69","o74","o77","o79","o81"],"flows":["F1","F2","F4","F5","F7","F8","F9"],"baru":20,"lama":0,"lain":0,"apis":4,"fns":18},{"id":4,"name":"Pega CS Konven","short":"Pega CS Konven","group":"internal","desc":"Aplikasi customer service konvensional (berbasis Pega).","traffic":1199486,"uses":["o1","o3","o40","o55"],"flows":["F1","F5","F7"],"baru":2,"lama":2,"lain":0,"apis":3,"fns":4},{"id":5,"name":"IB Corporate","short":"IB Corporate","group":"internal","desc":"Internet banking untuk nasabah perusahaan.","traffic":974083,"uses":["o37","o38","o48","o50","o61","o84"],"flows":["F5","F6","F7","F10"],"baru":2,"lama":4,"lain":0,"apis":2,"fns":6},{"id":6,"name":"Pega-Teller","short":"Pega-Teller","group":"internal","desc":"Aplikasi teller (berbasis Pega).","traffic":481002,"uses":["o87"],"flows":["F11"],"baru":0,"lama":1,"lain":0,"apis":1,"fns":1},{"id":7,"name":"PBK","short":"PBK","group":"internal","desc":"Aplikasi internal PBK.","traffic":353340,"uses":["o24","o19","o67","o75"],"flows":["F4","F8"],"baru":2,"lama":2,"lain":0,"apis":3,"fns":4},{"id":8,"name":"API-PEGA-Consumer-LOS","short":"Pega LOS","group":"internal","desc":"Aplikasi pengajuan kredit konsumer (berbasis Pega).","traffic":348189,"uses":["o19","o21","o26","o30","o33","o45","o46","o51","o85"],"flows":["F4","F5","F6","F10"],"baru":8,"lama":1,"lain":0,"apis":5,"fns":8},{"id":9,"name":"UR","short":"UR","group":"internal","desc":"Aplikasi internal UR.","traffic":332964,"uses":["o0","o2","o7","o19","o39","o84"],"flows":["F1","F2","F4","F5","F10"],"baru":5,"lama":1,"lain":0,"apis":5,"fns":6},{"id":10,"name":"Pega-CRM","short":"Pega-CRM","group":"internal","desc":"Aplikasi CRM (berbasis Pega).","traffic":213126,"uses":["o19","o31"],"flows":["F4"],"baru":1,"lama":1,"lain":0,"apis":1,"fns":2},{"id":11,"name":"BE-CRS","short":"BE-CRS","group":"internal","desc":"Sistem referral nasabah (Customer Referral System).","traffic":158136,"uses":["o19","o32","o64"],"flows":["F4","F7"],"baru":3,"lama":0,"lain":0,"apis":2,"fns":3},{"id":12,"name":"BE IB Syariah","short":"BE IB Syariah","group":"internal","desc":"Sistem internet banking syariah.","traffic":157386,"uses":["o71"],"flows":["F8"],"baru":0,"lama":1,"lain":0,"apis":1,"fns":1},{"id":13,"name":"Centerix","short":"Centerix","group":"internal","desc":"Aplikasi Centerix.","traffic":153421,"uses":["o23"],"flows":["F4"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":14,"name":"CreditRiskEngine","short":"CreditRiskEngine","group":"internal","desc":"Sistem penilai risiko kredit.","traffic":77393,"uses":["o26","o28","o29"],"flows":["F4"],"baru":3,"lama":0,"lain":0,"apis":2,"fns":3},{"id":15,"name":"sys-defaultApplication","short":"sys:default","group":"internal","desc":"Label untuk permintaan yang tidak tercatat asal aplikasinya.","traffic":67536,"uses":["o7","o16","o19","o33","o36","o39","o55","o65","o78","o84","o85","o89"],"flows":["F2","F3","F4","F5","F7","F8","F10","F11"],"baru":9,"lama":2,"lain":1,"apis":7,"fns":12},{"id":16,"name":"Pega-Complain-Handling","short":"Pega Complain","group":"internal","desc":"Aplikasi penanganan komplain (berbasis Pega).","traffic":47678,"uses":["o27","o36","o51","o53","o76","o78"],"flows":["F4","F5","F6","F8"],"baru":5,"lama":0,"lain":1,"apis":3,"fns":6},{"id":17,"name":"rdn-system","short":"rdn-system","group":"internal","desc":"Sistem rekening dana investor (RDN).","traffic":27622,"uses":["o0","o9","o19","o55"],"flows":["F1","F2","F4","F7"],"baru":4,"lama":0,"lain":0,"apis":3,"fns":4},{"id":18,"name":"contact-center","short":"contact-center","group":"internal","desc":"Aplikasi contact center / call center.","traffic":27561,"uses":["o44"],"flows":["F5"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":19,"name":"Pega-Teller-Syariah","short":"Pega-Teller-Syariah","group":"internal","desc":"Aplikasi teller syariah (berbasis Pega).","traffic":22571,"uses":["o87"],"flows":["F11"],"baru":0,"lama":1,"lain":0,"apis":1,"fns":1},{"id":20,"name":"Custody","short":"Custody","group":"internal","desc":"Sistem kustodian.","traffic":21503,"uses":["o34"],"flows":["F5"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":21,"name":"MAPS","short":"MAPS","group":"internal","desc":"Aplikasi MAPS.","traffic":16271,"uses":["o23","o39"],"flows":["F4","F5"],"baru":2,"lama":0,"lain":0,"apis":2,"fns":2},{"id":22,"name":"BE-PID-System","short":"BE-PID","group":"internal","desc":"Sistem BE-PID.","traffic":12179,"uses":["o84"],"flows":["F10"],"baru":0,"lama":1,"lain":0,"apis":1,"fns":1},{"id":23,"name":"prissa-chat-bot","short":"prissa-chat-bot","group":"internal","desc":"Chatbot.","traffic":9821,"uses":["o11","o84"],"flows":["F3","F10"],"baru":0,"lama":2,"lain":0,"apis":2,"fns":2},{"id":24,"name":"Profindo","short":"Profindo","group":"internal","desc":"Perusahaan sekuritas mitra (dugaan).","traffic":1615,"uses":["o88"],"flows":["F11"],"baru":0,"lama":1,"lain":0,"apis":1,"fns":1},{"id":25,"name":"middleware","short":"middleware","group":"internal","desc":"Aplikasi internal yang di API Gateway bernama \"middleware\".","traffic":595,"uses":["o51"],"flows":["F6"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":26,"name":"bsim-corp-web","short":"bsim-corp-web","group":"internal","desc":"Website bank (dugaan dari nama).","traffic":50,"uses":["o84"],"flows":["F10"],"baru":0,"lama":1,"lain":0,"apis":1,"fns":1},{"id":27,"name":"Eform-lakupandai","short":"Eform-lakupandai","group":"internal","desc":"Formulir elektronik untuk program Laku Pandai (agen bank).","traffic":28,"uses":["o19"],"flows":["F4"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":28,"name":"Narindo","short":"Narindo","group":"mitra","desc":"Perusahaan mitra yang terhubung lewat Open API SNAP.","traffic":2703593,"uses":["o91"],"flows":["F11"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":29,"name":"MonetaPay","short":"MonetaPay","group":"mitra","desc":"Perusahaan mitra yang terhubung lewat Open API SNAP.","traffic":581620,"uses":["o89","o90","o91"],"flows":["F11"],"baru":3,"lama":0,"lain":0,"apis":2,"fns":2},{"id":30,"name":"TBU","short":"TBU","group":"mitra","desc":"Perusahaan mitra yang terhubung lewat Open API SNAP.","traffic":254064,"uses":["o89"],"flows":["F11"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":31,"name":"KINI","short":"KINI","group":"mitra","desc":"Perusahaan mitra yang terhubung lewat Open API SNAP.","traffic":63889,"uses":["o89"],"flows":["F11"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":32,"name":"WeselAja","short":"WeselAja","group":"mitra","desc":"Perusahaan mitra yang terhubung lewat Open API SNAP.","traffic":27213,"uses":["o89"],"flows":["F11"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":33,"name":"Apikko","short":"Apikko","group":"mitra","desc":"Perusahaan mitra yang terhubung lewat Open API SNAP.","traffic":5195,"uses":["o89"],"flows":["F11"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":34,"name":"NanovestCorp","short":"NanovestCorp","group":"mitra","desc":"Perusahaan mitra yang terhubung lewat Open API SNAP.","traffic":2077,"uses":["o91"],"flows":["F11"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":35,"name":"Jutsoo","short":"Jutsoo","group":"mitra","desc":"Perusahaan mitra yang terhubung lewat Open API SNAP.","traffic":195,"uses":["o90"],"flows":["F11"],"baru":1,"lama":0,"lain":0,"apis":1,"fns":1},{"id":36,"name":"TopRemit","short":"TopRemit","group":"mitra","desc":"Perusahaan mitra yang terhubung lewat Open API SNAP.","traffic":51,"uses":["o89","o91"],"flows":["F11"],"baru":2,"lama":0,"lain":0,"apis":2,"fns":2}],"backends":[{"name":"msaccount","kind":"Microservice","host":"msaccount-integration.prods.banksinarmas.com ; account-management-integration.prods.banksinarmas.com","owner":"1 dari 5 MS milik MW Account","note":"Punya 2 hostname. Host account-management-integration memakai path /restv2/BSimMSAccountInquiry/ (pola MSR), jadi terlihat seperti SOA padahal microservice.","uses":54,"apps":13,"fns":34},{"name":"mscustomer","kind":"Microservice","host":"mscustomer-integration.prods.banksinarmas.com","owner":"1 dari 5 MS milik MW Account","note":"Melayani profil dan data nasabah.","uses":28,"apps":13,"fns":13},{"name":"msreport","kind":"Microservice","host":"ms-report-integration.prods.banksinarmas.com","owner":"1 dari 5 MS milik MW Account","note":"Hanya melayani /getStatementByDate v2.0.","uses":4,"apps":4,"fns":1},{"name":"msportofolio","kind":"Microservice","host":"ms-portfolio-integration.prods.banksinarmas.com","owner":"1 dari 5 MS milik MW Account","note":"Pencarian portofolio by tanggal dan detail portofolio.","uses":2,"apps":2,"fns":2},{"name":"ms-paymentintrument","kind":"Microservice","host":"(belum muncul)","owner":"1 dari 5 MS milik MW Account","note":"Belum dipakai channel mana pun. Target migrasi atm-card-management (kandidat).","uses":0,"apps":0,"fns":0},{"name":"mscustomerservice","kind":"Microservice","host":"mscustomerservice-integration.prods.banksinarmas.com","owner":"Di luar 5 MS (perlu konfirmasi)","note":"Melayani create & maintenance CIF serta benefOwner versi 1.0.","uses":7,"apps":5,"fns":3},{"name":"snap-account-management","kind":"Microservice","host":"snap-account-management-integration.prods.banksinarmas.com","owner":"Di luar 5 MS (perlu konfirmasi)","note":"Detail transaksi (Pega Complain) dan SNAP bank-statement.","uses":7,"apps":6,"fns":2},{"name":"snap-balance-service","kind":"Microservice","host":"snap-balance-service-integration.prods.banksinarmas.com","owner":"Di luar 5 MS (perlu konfirmasi)","note":"SNAP balance-inquiry untuk partner B2B.","uses":7,"apps":7,"fns":1},{"name":"SOA 10.22.11.100","kind":"SOA","host":"10.22.11.100:7737","owner":"Server SOA bersama banyak tim","note":"Path /restv2/... Berada di server SOA bukan bukti milik MW Account; kepemilikan dicek lewat nama API.","uses":36,"apps":17,"fns":25},{"name":"adminibank (legacy)","kind":"Legacy","host":"adminibank.banksinarmas.com:443","owner":"Server legacy non-MS","note":"customer-management-digital /getDetailCustomer; success rate 0% menurut SLO 2026.","uses":1,"apps":1,"fns":1},{"name":"Tidak diketahui","kind":"Tidak diketahui","host":"(native URL kosong)","owner":"-","note":"accounts-integration-simas-tara /contract-detail (sys:defaultApplication).","uses":1,"apps":1,"fns":1}],"migration":[["Versi berbeda, operation sama","account-deposito /createDeposito","v1.0 (SOA) — Digital Banking","v1.1 (MS msaccount) — Digital Banking","Digital Banking memanggil keduanya. SOA belum bisa dimatikan sebelum v1.0 ditinggalkan."],["Versi berbeda, operation sama","Account-Management /getStatementByDate","v1.0 (SOA, EDW) — IB Corporate","v2.0 (MS msreport / msaccount) — Digital Banking, NanoBank, Pega LOS, Pega Complain, middleware","Tinggal IB Corporate yang di jalur lama."],["Versi berbeda, operation sama","Account-Management /getTodayStatement","v1.0 (SOA, EDW) — IB Corporate","v2.0 (MS msaccount) — Digital Banking, NanoBank","Tinggal IB Corporate yang di jalur lama."],["Fungsi serupa, API berbeda (dugaan dari nama)","Tutup rekening","Account-Management /closeAccount, /closeAccountInfo (SOA) — Digital Banking","Account-Integration-Personal /account-closure, /close-account-balance (MS) — Digital Banking, BOS","Digital Banking memakai keduanya."],["Fungsi serupa, API berbeda (dugaan dari nama)","Aktivasi rekening dormant","Account-Management /releaseDormant (SOA) — Digital Banking, IB Corporate","Account-Integration-Personal /activate-dormant (MS) — BOS",""],["Fungsi serupa, API berbeda (dugaan dari nama)","Tahan / lepas dana","Account-Management /lockAccount; account-service-internal /lockAmount, /unlockAmount (SOA) — Digital Banking, PBK","Account-Integration-Personal /lock-amount, /break-lock-amount (MS) — BOS",""],["Fungsi serupa, API berbeda (dugaan dari nama)","Rate deposito","accounts-deposit /rates (SOA) — prissa-chat-bot","account-deposito /rate (MS) — Digital Banking","Jaga konsistensi rate antar dua sumber."]],"soaOnly":["o1","o11","o14","o15","o31","o40","o41","o42","o61","o67","o68","o70","o71","o72","o73","o75","o80","o83","o84","o85","o86","o87","o88"],"candidates":[["Tinggi","NanoBank","account-management-syariah","v2.0","/releaseDormant","SOA","10.22.16.10:7737/restv2/releaseDormantAccount","Path persis sama dengan Account-Management milik MW, hanya beda host (server syariah).","Konfirmasi ke tim Syariah.","F7 Maintenance"],["Tinggi","BOS","atm-card-management","1.0.0","/callRestCard, /cardInfo, /cardStatus, /linkCard","SOA","10.22.11.101:7737/restv2/cardMgmt/...","Ada di file SOA Modernization dengan target ms-paymentintrument (1 dari 5 MS MW Account).","Konfirmasi (catatan di file SOA: \"Sudah Move Ke LG\").","Kartu ATM/debit (di luar 11 flow)"],["Tinggi","Digital Banking","atm-card-management","1.0.0","/cardInfo, /cardStatus, /custDetailByCIF, /linkCard, /verifyPIN","SOA","10.22.11.101:7737/restv2/cardMgmt/...","Sama seperti di atas.","Sama seperti di atas.","Kartu ATM/debit (di luar 11 flow)"],["Tinggi","Pega-Complain-Handling","atm-card-management","1.0.0","/cardInfo, /cardStatus","SOA","10.22.11.101:7737/restv2/cardMgmt/...","Sama seperti di atas.","Sama seperti di atas.","Kartu ATM/debit (di luar 11 flow)"],["Tinggi","BE IB Syariah","Customer-Syariah","v1.0","/breakAccount, /openAccount, /syncCIF","SOA","10.22.11.100:7737/restv2/accountRest/openAccount","/syncCIF memakai URL yang sama dengan Customer-Konven; /openAccount di namespace accountRest milik MW. Anomali: /breakAccount mengarah ke URL /openAccount.","Konfirmasi ke tim Syariah; cek routing /breakAccount.","F1, F2, F3"],["Sedang","NanoBank","Account-Opening-Syariah","v1.0","/accountOpening","SOA","10.22.16.10:7737/restv2/accountRest/openAccount","Prefix /restv2/accountRest/ sama dengan /closeAccount milik MW.","Konfirmasi pemilik namespace accountRest di server syariah.","F2 Buka Rekening"],["Sedang","sys-defaultApplication","Account-Opening-Syariah","v1.0","/accountOpening","Tidak diketahui","(kosong)","Sama seperti di atas.","Sama seperti di atas.","F2 Buka Rekening"],["Sedang","NanoBank","Currency-rate-syariah","1.0","/exchangeRate","Legacy","10.22.40.17:8080/Api/ExchangeRate","Satu keluarga nama dengan currency-rate milik MW.","Konfirmasi apakah versi syariah dikelola MW Account.","F10 Kurs & Valas"],["Sedang","Pega-Complain-Hdl-Syariah","customer-management-digital-syariah","v1.0","/doInactiveUser, /getDetailCustomer","Legacy","10.22.40.187:6101/ibank/rest/integratedDesktop/...","Varian syariah dari customer-management-digital.","Konfirmasi ke tim Syariah.","F4 Profil Nasabah"],["Sedang","NanoBank","customer-management-syariah","v1.2","/consent, /financing, /inquiry","Microservice","mscustomersyariah-integration-syariah.prods.banksinarmas.com/api/...","Domain nasabah dengan MS sendiri (mscustomersyariah).","Konfirmasi batas scope customer syariah.","F1, F4"],["Sedang","sys-defaultApplication","customer-management-syariah","v1.2","/data-validation","Tidak diketahui","(kosong)","Sama seperti di atas.","Sama seperti di atas.","F1, F4"],["Sedang","CreditRiskEngine","loan-servicing-internal","v1.0","/customerPortofolio","SOA","10.22.11.100:7737/restv2/loanPortfolio/getLoanPortfolio","Baris pertama file SOA Modernization (\"Get Loan Portfolio\", Ready SIT, SDE4-17909).","Konfirmasi masuk scope MW Account atau tim Loan.","F5 Saldo & Portofolio"]],"issues":[["Dikoreksi di dokumen ini","customer-management-digital /getDetailCustomer (Pega-Complain-Handling) tidak ada di summary workbook asal.","Dimasukkan ke F4 dan semua ringkasan."],["Dikoreksi di dokumen ini","URL SNAP-in-b2b-accounts-history v1.0 di Summary of Operation Name berisi URL balance-inquiry.","Memakai URL dari sheet API Banking (snap-account-management …/v1.0/b2b/bank-statement)."],["Dikoreksi di dokumen ini","Baris SNAP tidak punya Architecture & Backend.","Diisi dari pola host (Microservice; snap-balance-service / snap-account-management)."],["Dikoreksi di dokumen ini","IB Corporate tercatat 2 kali di List of Channel (IB Corporate & IB-Corporate).","Traffic digabung (±974 ribu record)."],["Dikoreksi di dokumen ini","Kolom Count of Records di List of Channel campur format (teks, desimal, angka bulat); SUM di Excel jadi ±16.841.","Semua angka traffic di dokumen ini sudah dikonversi ke angka utuh (total 712.706.392)."],["Perlu tindak lanjut","Kategori operation tidak konsisten (mis. /account-creation-saving; /account-closure vs /close-account-balance; portfolio/saving konven vs syariah).","Kolom kategori asal tetap ditampilkan apa adanya; dokumen ini memakai user flow sebagai acuan."],["Perlu tindak lanjut","Kepemilikan SNAP kontradiktif: Notes menilai SNAP balance \"Rendah\" milik MW, tapi API Banking & summary memasukkannya.","Konfirmasi ke tim API Banking."],["Perlu tindak lanjut","mscustomerservice & snap-account-management di luar 5 MS milik MW Account.","Konfirmasi kepemilikan."],["Perlu tindak lanjut","customer-management-digital /getDetailCustomer: success rate 0% di SLO 2026 (281 request, semua HTTP 500).","Cek ke tim terkait; server legacy adminibank."],["Perlu tindak lanjut","Customer-Syariah /breakAccount mengarah ke URL /openAccount.","Kemungkinan salah konfigurasi routing."],["Perlu tindak lanjut","12,4% record gateway berlabel Unknown dan 80 aplikasi (15,7%) belum di-assess, termasuk identilink & auth0.","Cek apakah ada yang memanggil API MW Account (dugaan dari nama: TVKurs, SmartFX untuk kurs; Mirae-Sekuritas untuk /checkAccount)."],["Perlu tindak lanjut","Notes workbook asal menyebut formula & sheet yang tidak ada di versi _5.","Di dokumen ini semua angka ringkasan memakai formula dari tab Data."]],"glossary":[{"term":"Aplikasi (channel)","arti":"Aplikasi atau sistem yang dipakai nasabah/petugas, dan memanggil API.","ana":"Seperti pelayan restoran yang membawa pesanan tamu. Contoh: Digital Banking, BOS, Pega-Teller."},{"term":"API","arti":"Cara satu aplikasi meminta data, atau meminta sesuatu dikerjakan, oleh sistem lain.","ana":"Seperti menu pesanan: aplikasi memesan \"cek saldo\", sistem mengirimkan hasilnya."},{"term":"Fungsi API (operation)","arti":"Satu jenis permintaan yang spesifik di dalam sebuah API.","ana":"Satu item di menu, misalnya \"Buka rekening tabungan\"."},{"term":"Versi API","arti":"Nomor versi sebuah fungsi. Versi baru biasanya perbaikan dari versi sebelumnya, dan keduanya bisa dipakai bersamaan.","ana":"Seperti resep yang diperbarui, tapi sebagian pelanggan masih memesan resep lama."},{"term":"API Gateway","arti":"Pintu masuk semua permintaan API. Mencatat aplikasi mana meminta fungsi apa.","ana":"Seperti kasir yang mencatat setiap pesanan."},{"term":"MW Account (Middleware Account)","arti":"Kumpulan API untuk urusan rekening dan data nasabah, yang menjembatani aplikasi dengan sistem inti bank.","ana":"Seperti daftar menu khusus urusan rekening dan nasabah."},{"term":"Sistem baru (microservice / MS)","arti":"Layanan modern tempat permintaan diproses, mis. msaccount, mscustomer, msreport, msportofolio.","ana":"Dapur baru."},{"term":"Sistem lama (SOA)","arti":"Server integrasi lama (10.22.11.100) yang sedang ditinggalkan secara bertahap.","ana":"Dapur lama yang masih dipakai untuk beberapa menu."},{"term":"Sistem inti bank (core banking)","arti":"Sistem utama tempat data rekening dan transaksi disimpan.","ana":"Gudang bahan."},{"term":"Jalur lama / jalur baru","arti":"Fungsi yang sama tersedia di sistem lama dan sistem baru. Selama masih ada aplikasi yang memakai jalur lama, jalur itu belum bisa dimatikan.","ana":"Dua dapur yang sama-sama masih menerima pesanan menu yang sama."},{"term":"Pemakaian","arti":"Satu pasangan aplikasi × fungsi API (per versi). Dipakai untuk menghitung seberapa luas sebuah fungsi dipakai.","ana":"Digital Banking memakai \"Buka rekening tabungan\" = 1 pemakaian."},{"term":"Dampak (blast radius)","arti":"Banyaknya aplikasi yang ikut terganggu kalau satu fungsi atau satu sistem bermasalah.","ana":"\"Cek profil nasabah\" dipakai 10 aplikasi, jadi dampaknya luas."},{"term":"Alur (user flow)","arti":"Urutan langkah yang dilakukan nasabah/petugas untuk satu keperluan, misalnya membuka rekening.","ana":"F1–F11 di dokumen ini."},{"term":"CIF","arti":"Nomor induk nasabah. Satu nasabah punya satu CIF dan bisa punya banyak rekening.","ana":"Seperti NIK-nya nasabah di bank."},{"term":"KYC","arti":"Proses mengenali dan memverifikasi data nasabah.","ana":"Cek identitas saat membuka rekening."},{"term":"Pemilik dana sebenarnya (beneficial owner)","arti":"Orang yang sebenarnya memiliki atau menikmati dana di rekening.","ana":""},{"term":"Persetujuan (consent)","arti":"Izin dari nasabah, misalnya untuk penggunaan datanya.","ana":""},{"term":"Rekening tidur (dormant)","arti":"Rekening yang tidak aktif karena lama tidak ada transaksi.","ana":""},{"term":"Tahan saldo (lock / hold)","arti":"Sebagian saldo dibekukan sementara sehingga tidak bisa dipakai.","ana":"Seperti uang jaminan yang ditahan dulu."},{"term":"Blokir rekening","arti":"Rekening dibatasi sehingga tidak bisa bertransaksi.","ana":""},{"term":"Mutasi","arti":"Daftar transaksi masuk dan keluar di rekening.","ana":""},{"term":"Portofolio","arti":"Ringkasan semua produk yang dimiliki nasabah (tabungan, deposito, dll.).","ana":""},{"term":"Deposito","arti":"Simpanan berjangka dengan bunga dan jangka waktu tertentu.","ana":""},{"term":"Tabungan berencana","arti":"Tabungan dengan rencana atau target tertentu.","ana":""},{"term":"Cairkan lebih awal (break)","arti":"Mengambil dana produk berjangka sebelum jatuh tempo.","ana":""},{"term":"Standing order","arti":"Instruksi transfer atau debet rutin yang berjalan otomatis.","ana":""},{"term":"RDN","arti":"Rekening Dana Nasabah untuk investasi saham/efek.","ana":""},{"term":"SNAP","arti":"Standar Open API dari Bank Indonesia agar perusahaan mitra bisa terhubung ke bank dengan cara yang seragam.","ana":""},{"term":"Perusahaan mitra (B2B)","arti":"Perusahaan (bukan perorangan) yang terhubung langsung ke API bank.","ana":"Contoh: MonetaPay, Narindo."},{"term":"RM","arti":"Relationship manager, petugas bank yang menangani nasabah tertentu.","ana":""},{"term":"Konvensional / syariah","arti":"Jenis layanan bank: konvensional atau berbasis prinsip syariah.","ana":""},{"term":"Akhir hari / akhir bulan (EOD / EOM)","arti":"Posisi data pada akhir hari atau akhir bulan.","ana":""},{"term":"sys:defaultApplication","arti":"Label untuk permintaan yang tidak tercatat asal aplikasinya.","ana":""},{"term":"Info teknis: endpoint / native URL","arti":"Alamat teknis sistem pemroses yang sebenarnya dipanggil.","ana":"Untuk tim IT."},{"term":"Info teknis: backend","arti":"Nama sistem pemroses (mis. msaccount, mscustomer, SOA 10.22.11.100).","ana":"Untuk tim IT."},{"term":"Info teknis: legacy","arti":"Server lama di luar SOA dan microservice, mis. adminibank.","ana":"Untuk tim IT."}],"totals":{"rows":147,"baru":109,"lama":36,"lain":2,"internal":28,"mitra":9,"apis":19,"fns":79,"fnver":92,"traffic":712706392},"phases":{"P1":"Jadi nasabah & buka produk","P2":"Pakai rekening sehari-hari","P3":"Kelola rekening","P4":"Akhiri hubungan","P5":"Jalur partner & teller"}}</script>
+<script>
+(function () {
+  'use strict';
+  var D = JSON.parse(document.getElementById('data').textContent);
+  var OPS = D.ops, APPS = D.apps, T = D.totals;
+  var FL = {}; D.flows.forEach(function (f) { FL[f.code] = f; });
+
+  /* ---------- Ikon (digambar khusus untuk halaman ini) ---------- */
+  var IC = {
+    home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>',
+    route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>',
+    swap: '<path d="M4 8h15"/><path d="m15 4 4 4-4 4"/><path d="M20 16H5"/><path d="m9 12-4 4 4 4"/>',
+    book: '<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
+    clipboard: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    smartphone: '<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>',
+    door: '<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.56v16.16a1 1 0 0 1-1.24.97L5 20V5.56a2 2 0 0 1 1.52-1.94l4-1A2 2 0 0 1 13 4.56z"/>',
+    layers: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+    server: '<rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="13" width="18" height="8" rx="2"/><path d="M7 7h.01"/><path d="M7 17h.01"/><path d="M11 7h6"/><path d="M11 17h6"/>',
+    database: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/>',
+    userPlus: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M19 8v6"/><path d="M16 11h6"/>',
+    wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+    piggy: '<path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/>',
+    idCard: '<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M5 16a3 3 0 0 1 6 0"/><path d="M14 10h4"/><path d="M14 14h4"/>',
+    coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
+    receipt: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h5"/>',
+    pencil: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="m15 5 4 4"/>',
+    lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
+    globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>',
+    landmark: '<path d="M3 22h18"/><path d="M6 18v-7"/><path d="M10 18v-7"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M12 2 20 7H4z"/>',
+    headset: '<path d="M3 11h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5zm0 0a9 9 0 1 1 18 0m0 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M21 16v2a4 4 0 0 1-4 4h-5"/>',
+    fileCheck: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/>',
+    trending: '<path d="m22 7-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
+    bot: '<path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+    fileText: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/>',
+    cpu: '<rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2v3"/><path d="M15 2v3"/><path d="M9 19v3"/><path d="M15 19v3"/><path d="M2 9h3"/><path d="M2 15h3"/><path d="M19 9h3"/><path d="M19 15h3"/>',
+    help: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+    building: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
+    code: '<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>',
+    refresh: '<path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M8 16H3v5"/>',
+    arrowRight: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+    arrowLeft: '<path d="M19 12H5"/><path d="m11 18-6-6 6-6"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    play: '<path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5z" fill="currentColor" stroke="none"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    bulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.74c.62.47 1 1.2 1 1.98V17h6v-.28c0-.78.38-1.51 1-1.98A7 7 0 0 0 12 2z"/>',
+    wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+    check: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    utensils: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>',
+    map: '<path d="M14.11 5.55a2 2 0 0 0 1.78 0l3.66-1.83A1 1 0 0 1 21 4.62v12.76a1 1 0 0 1-.55.9l-4.56 2.27a2 2 0 0 1-1.78 0l-4.22-2.1a2 2 0 0 0-1.78 0l-3.66 1.83A1 1 0 0 1 3 19.38V6.62a1 1 0 0 1 .55-.9l4.56-2.27a2 2 0 0 1 1.78 0z"/><path d="M15 5.76v15"/><path d="M9 3.24v15"/>',
+    chevDown: '<path d="m6 9 6 6 6-6"/>',
+    moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
+    ban: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+    tag: '<path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.42l8.7 8.7a2.43 2.43 0 0 0 3.42 0l6.58-6.58a2.43 2.43 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1" fill="currentColor"/>',
+    plug: '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8z"/>',
+    target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/>',
+    repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+    pie: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+    userCheck: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="m16 11 2 2 4-4"/>',
+    checkSquare: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/>',
+    archive: '<rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>'
+  };
+  function ic(n, cls) { return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (IC[n] || IC.help) + '</svg>'; }
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fmt(n) { return Number(n).toLocaleString('id-ID'); }
+  function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
+
+  /* ---------- Kategori & ikon ---------- */
+  var FIC = { F1: 'userPlus', F2: 'wallet', F3: 'piggy', F4: 'idCard', F5: 'coins', F6: 'receipt', F7: 'pencil', F8: 'lock', F9: 'logout', F10: 'globe', F11: 'link' };
+  var CAT = {
+    'Digital Banking': 'mobile', 'NanoBank': 'mobile',
+    'IB Corporate': 'web', 'BE IB Syariah': 'web', 'bsim-corp-web': 'web',
+    'Pega-Teller': 'teller', 'Pega-Teller-Syariah': 'teller',
+    'Pega CS Konven': 'cs', 'contact-center': 'cs', 'Pega-Complain-Handling': 'cs', 'Pega-CRM': 'cs', 'BE-CRS': 'cs',
+    'API-PEGA-Consumer-LOS': 'kredit', 'CreditRiskEngine': 'kredit',
+    'rdn-system': 'investasi', 'Custody': 'investasi', 'Profindo': 'investasi',
+    'prissa-chat-bot': 'bot', 'Eform-lakupandai': 'form', 'sys-defaultApplication': 'unknown'
+  };
+  var CATS = {
+    mobile: { l: 'Aplikasi HP', ic: 'smartphone' }, web: { l: 'Internet banking & web', ic: 'monitor' }, teller: { l: 'Teller', ic: 'landmark' },
+    cs: { l: 'Layanan nasabah & CRM', ic: 'headset' }, kredit: { l: 'Kredit', ic: 'fileCheck' }, investasi: { l: 'Investasi', ic: 'trending' },
+    bot: { l: 'Chatbot', ic: 'bot' }, form: { l: 'Formulir elektronik', ic: 'fileText' }, sistem: { l: 'Sistem internal', ic: 'cpu' },
+    unknown: { l: 'Asal tidak tercatat', ic: 'help' }, mitra: { l: 'Perusahaan mitra', ic: 'building' }
+  };
+  var CAT_ORDER = ['mobile', 'web', 'teller', 'cs', 'kredit', 'investasi', 'bot', 'form', 'sistem', 'unknown', 'mitra'];
+  function catOf(a) { return a.group === 'mitra' ? 'mitra' : (CAT[a.name] || 'sistem'); }
+  function appIc(a, size) { return '<span class="bub ' + (size || 's') + ' gray">' + ic(CATS[catOf(a)].ic) + '</span>'; }
+  function flowIc(code, size, extra) { return '<span class="bub ' + (size || 'm') + (extra ? ' ' + extra : '') + '">' + ic(FIC[code]) + '</span>'; }
+  var SYSL = { baru: 'Sistem baru', lama: 'Sistem lama', lain: 'Lainnya' };
+  var SYSS = { baru: 'Baru', lama: 'Lama', lain: 'Lainnya' };
+  function sysPill(s) { return '<span class="sp ' + s + '"><i class="dot ' + s + '"></i>' + SYSL[s] + '</span>'; }
+  function mbar(b, l, o) { return '<span class="mbar" aria-hidden="true"><i class="b" style="flex-grow:' + b + '"></i><i class="l" style="flex-grow:' + l + '"></i><i class="o" style="flex-grow:' + o + '"></i></span>'; }
+  function conic(b, l, o) {
+    var t = (b + l + o) || 1, A = (b / t * 100).toFixed(1), B = ((b + l) / t * 100).toFixed(1);
+    return 'conic-gradient(var(--baru) 0 ' + A + '%,var(--lama) ' + A + '% ' + B + '%,var(--lain) ' + B + '% 100%)';
+  }
+  var LEGEND = '<div class="legend"><span><i class="dot baru"></i>Sistem baru (microservice)</span><span><i class="dot lama"></i>Sistem lama (SOA)</span><span><i class="dot lain"></i>Lainnya</span></div>';
+  var STAGES = [
+    { n: '1', name: 'Jadi nasabah', flows: ['F1'] },
+    { n: '2', name: 'Buka produk', flows: ['F2', 'F3'] },
+    { n: '3', name: 'Pakai rekening', flows: ['F4', 'F5', 'F6', 'F10'] },
+    { n: '4', name: 'Urus rekening', flows: ['F7', 'F8'] },
+    { n: '5', name: 'Akhiri', flows: ['F9'] }
+  ];
+  var share = pct(T.baru, T.baru + T.lama);
+
+  /* ---------- Data turunan ---------- */
+  var FLOW_OPS = {};
+  D.flows.forEach(function (f) {
+    var ids = [];
+    f.steps.forEach(function (st, si) { st.items.forEach(function (it) { if (!it.shared) ids.push({ id: it.id, step: si + 1 }); }); });
+    FLOW_OPS[f.code] = ids;
+  });
+  function flowApps(code) {
+    var cnt = {};
+    FLOW_OPS[code].forEach(function (x) { OPS[x.id].apps.forEach(function (a) { cnt[a] = (cnt[a] || 0) + 1; }); });
+    return Object.keys(cnt).map(Number).sort(function (a, b) { return cnt[b] - cnt[a] || APPS[b].uses.length - APPS[a].uses.length || a - b; });
+  }
+  function appFlowCounts(a) {
+    var r = {};
+    a.uses.forEach(function (id) { var o = OPS[id]; var c = r[o.flow] || (r[o.flow] = { n: 0, baru: 0, lama: 0, lain: 0 }); c.n++; c[o.sys]++; });
+    return r;
+  }
+  var APP_FC = APPS.map(appFlowCounts);
+
+  var state = { tab: 'beranda', flow: 'F1', q: '', qflow: '', qsys: '', appq: '', cat: '', kq: '' };
+
+  /* ---------- Beranda ---------- */
+  function station(i, icon, cls, std, alt, sstd, salt) {
+    return '<div class="st" data-st="' + i + '"><span class="bub l' + (cls ? ' ' + cls : '') + '">' + ic(icon) + '</span><span class="st-t">' +
+      '<b data-std="' + esc(std) + '" data-alt="' + esc(alt) + '">' + esc(std) + '</b><small data-std="' + esc(sstd) + '" data-alt="' + esc(salt) + '">' + esc(sstd) + '</small></span></div>';
+  }
+  var CONN = '<div class="conn" aria-hidden="true"></div>';
+  var DEMO = [
+    [0, 'Budi membuka Digital Banking untuk cek saldo.'],
+    [1, 'Digital Banking meminta fungsi "Daftar semua rekening nasabah".'],
+    [2, 'API Gateway mencatat permintaan itu, lalu meneruskannya.'],
+    [3, 'MW Account mengarahkan ke sistem yang memproses fungsi itu.'],
+    [4, 'Sistem baru (msaccount) mengambil data rekening Budi.'],
+    [6, 'Data dikirim balik, saldo tampil di layar Budi.']
+  ];
+  function tile(icon, big, l1, small, cls) {
+    return '<div class="tile"><span class="bub m' + (cls ? ' ' + cls : '') + '">' + ic(icon) + '</span><div><b>' + esc(big) + '</b><span class="l1">' + esc(l1) + '</span><small>' + esc(small) + '</small></div></div>';
+  }
+  function ftile(code) {
+    var f = FL[code], s = f.stats;
+    return '<button class="ftile" data-flow="' + code + '"><span class="top">' + flowIc(code, 'm') + '<span class="nm"><b>' + esc(f.name) + '</b><small>' + s.ops + ' fungsi · ' + s.apps + ' aplikasi</small></span></span>' + mbar(s.baru, s.lama, s.lain) + '</button>';
+  }
+  function renderBeranda() {
+    var h = '<section class="card hero"><div class="hero-top"><div class="blk-h"><h2>Perjalanan satu permintaan</h2><p class="hint">Dari aplikasi sampai data rekening</p></div>' +
+      '<div class="acts"><button class="btn" id="anaTog" aria-pressed="false">' + ic('utensils') + 'Perumpamaan restoran</button><button class="btn primary" id="demoBtn">' + ic('play') + '<span>Putar contoh</span></button></div></div>' +
+      '<p class="cap" aria-live="polite">' + ic('info') + '<span id="capTxt">Tekan <b>Putar contoh</b> untuk melihat satu permintaan berjalan.</span></p>' +
+      '<div class="path" id="path">' +
+      station(0, 'users', '', 'Nasabah / petugas', 'Tamu', 'pengguna', 'yang memesan') + CONN +
+      station(1, 'smartphone', '', 'Aplikasi', 'Pelayan', (T.internal + T.mitra) + ' aplikasi', 'membawa pesanan') + CONN +
+      station(2, 'door', '', 'API Gateway', 'Kasir', 'pintu masuk', 'mencatat pesanan') + CONN +
+      station(3, 'layers', 'solid', 'MW Account', 'Daftar menu', T.fns + ' fungsi', 'pilihan menu') + CONN +
+      '<div class="st-pair">' + station(4, 'server', 'baru', 'Sistem baru', 'Dapur baru', share + '% pemakaian', share + '% pesanan') +
+      '<div class="or">atau</div>' + station(5, 'server', 'lama', 'Sistem lama', 'Dapur lama', (100 - share) + '% pemakaian', (100 - share) + '% pesanan') + '</div>' + CONN +
+      station(6, 'database', '', 'Data bank', 'Gudang bahan', 'core banking', 'bahan baku') +
+      '</div></section>';
+    h += '<div class="tiles">' +
+      tile('smartphone', T.internal + T.mitra, 'aplikasi pemakai', T.internal + ' internal · ' + T.mitra + ' mitra') +
+      tile('route', D.flows.length, 'alur nasabah', 'dari daftar sampai tutup') +
+      tile('code', T.fns, 'fungsi API', 'dalam ' + T.apis + ' layanan API') +
+      tile('refresh', share + '%', 'lewat sistem baru', 'sisanya masih sistem lama', 'baru') + '</div>';
+    h += '<section class="blk"><div class="blk-h"><h2>Perjalanan nasabah</h2><p class="hint">Klik satu alur untuk melihat langkah dan fungsinya</p></div>' + LEGEND + '<div class="journey">';
+    STAGES.forEach(function (st) {
+      h += '<div class="stage"><div class="stage-h"><span class="num">' + st.n + '</span>' + esc(st.name) + '</div>' + st.flows.map(ftile).join('') + '</div>';
+    });
+    h += '</div><div class="lane"><div class="stage-h"><span class="num">' + ic('link') + '</span>Jalur samping: teller dan perusahaan mitra</div>' + ftile('F11') + '</div></section>';
+    document.getElementById('v-beranda').innerHTML = h;
+    document.getElementById('anaTog').addEventListener('click', toggleAna);
+    document.getElementById('demoBtn').addEventListener('click', playDemo);
+  }
+  function toggleAna() {
+    var b = document.getElementById('anaTog'), on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', String(on));
+    document.querySelectorAll('#path [data-std]').forEach(function (el) { el.textContent = el.getAttribute(on ? 'data-alt' : 'data-std'); });
+  }
+  var timers = [];
+  function playDemo() {
+    timers.forEach(clearTimeout); timers = [];
+    var path = document.getElementById('path'), cap = document.getElementById('capTxt'), btn = document.getElementById('demoBtn');
+    var stepMs = 1900;
+    path.classList.add('playing');
+    btn.querySelector('span').textContent = 'Sedang diputar…';
+    DEMO.forEach(function (d, i) {
+      timers.push(setTimeout(function () {
+        path.querySelectorAll('.st').forEach(function (s) { s.classList.toggle('on', Number(s.getAttribute('data-st')) === d[0]); });
+        cap.innerHTML = '<b>' + (i + 1) + '/' + DEMO.length + '</b> &nbsp;' + esc(d[1]);
+      }, i * stepMs));
+    });
+    timers.push(setTimeout(function () {
+      path.classList.remove('playing');
+      path.querySelectorAll('.st').forEach(function (s) { s.classList.remove('on'); });
+      btn.querySelector('span').textContent = 'Putar lagi';
+    }, DEMO.length * stepMs + 600));
+  }
+
+  /* ---------- Alur ---------- */
+  function opLine(o, withApi) {
+    return '<span class="op" title="' + esc(o.op + ' · ' + o.api + ' ' + o.ver) + '">' + esc(o.op) + (withApi ? '<span class="op-api"> · ' + esc(o.api) + ' ' + esc(o.ver) + '</span>' : '') + '</span>';
+  }
+  function fnTile(id, shared) {
+    var o = OPS[id];
+    var meta = shared
+      ? '<span class="k">' + ic('link') + 'dari ' + o.flow + '</span>'
+      : '<span class="k"><i class="dot ' + o.sys + '"></i>' + SYSS[o.sys] + '</span><span class="k">' + ic('smartphone') + o.apps.length + ' aplikasi</span>';
+    return '<button class="fn ' + (shared ? 'shared' : o.sys) + '" data-fn="' + id + '"><span class="fn-n">' + esc(o.name) + '</span>' + opLine(o, true) + '<span class="fn-m">' + meta + '</span></button>';
+  }
+  function more(icon, title, body, open) {
+    return '<details class="more"' + (open ? ' open' : '') + '><summary>' + ic(icon) + esc(title) + '<span class="chev">' + ic('chevDown') + '</span></summary><div class="body">' + body + '</div></details>';
+  }
+  function td(label, html, cls) { return '<td' + (cls ? ' class="' + cls + '"' : '') + ' data-label="' + esc(label) + '"><div>' + html + '</div></td>'; }
+  function thead(cols) { return '<thead><tr>' + cols.map(function (c) { var num = c.charAt(0) === '#'; return '<th' + (num ? ' class="num"' : '') + '>' + esc(num ? c.slice(1) : c) + '</th>'; }).join('') + '</tr></thead>'; }
+  function mono(v, url) { return '<span class="mono' + (url ? ' url' : '') + '">' + esc(v) + '</span>'; }
+  function appNames(ids) { return ids.map(function (i) { return APPS[i].name; }).join(', '); }
+
+  function flowMatrix(code) {
+    var apps = flowApps(code), rows = FLOW_OPS[code];
+    var h = '<div class="mx-wrap fit"><table class="mx fmx"><thead><tr><th class="rh" scope="col"><span class="hint">Fungsi ↓ &nbsp;·&nbsp; Aplikasi →</span></th>' +
+      apps.map(function (a) { var A = APPS[a]; return '<th scope="col"><button class="chb" data-app="' + a + '" title="' + esc(A.name) + '"><span class="vt">' + esc(A.short) + '</span>' + appIc(A, 's') + '</button></th>'; }).join('') + '</tr></thead><tbody>';
+    rows.forEach(function (r) {
+      var o = OPS[r.id];
+      h += '<tr><th scope="row" class="rh"><button class="rhb" data-fn="' + r.id + '"><span class="stn" title="Langkah ' + r.step + '">' + r.step + '</span><span class="rn-w"><span class="rn">' + esc(o.name) + '</span>' + opLine(o, true) + '</span></button></th>' +
+        apps.map(function (a) {
+          return o.apps.indexOf(a) > -1 ? '<td class="on"><i class="dot lg ' + o.sys + '" title="' + esc(APPS[a].name + ' memakai "' + o.name + '" · ' + SYSL[o.sys]) + '"></i></td>' : '<td></td>';
+        }).join('') + '</tr>';
+    });
+    return h + '</tbody></table></div>';
+  }
+  function renderAlur() {
+    var f = FL[state.flow], s = f.stats, tot = s.baru + s.lama + s.lain;
+    var h = '<div class="picker" id="picker">' + D.flows.map(function (x) {
+      return '<button class="pk" data-flow="' + x.code + '" aria-current="' + (x.code === f.code) + '">' + flowIc(x.code, 'm') + '<span class="pk-c">' + x.code + '</span><span>' + esc(x.name) + '</span></button>';
+    }).join('') + '</div>';
+    h += '<header class="card fl-h" id="flowHead">' + flowIc(f.code, 'xl', 'solid') + '<div class="t"><span class="code">' + f.code + '</span><h2>' + esc(f.name) + '</h2><p>' + esc(f.short) + '</p></div>' +
+      '<div class="fl-stats"><span class="chip">' + ic('code') + '<b>' + s.ops + '</b> fungsi</span><span class="chip">' + ic('smartphone') + '<b>' + s.apps + '</b> aplikasi</span>' +
+      '<span class="ring" style="background:' + conic(s.baru, s.lama, s.lain) + '" title="Sistem baru ' + s.baru + ', sistem lama ' + s.lama + (s.lain ? ', lainnya ' + s.lain : '') + ' pemakaian"><span>' + pct(s.baru, tot) + '%<small>baru</small></span></span></div></header>';
+    h += '<section class="blk"><h3>' + ic('route') + 'Langkah-langkah</h3><ol class="stepper" style="--n:' + f.steps.length + '">' + f.steps.map(function (stp, i) {
+      return '<li class="step"><span class="sn">' + (i + 1) + '</span><h4>' + esc(stp.title) + '</h4><div class="fns">' + stp.items.map(function (it) { return fnTile(it.id, it.shared); }).join('') + '</div></li>';
+    }).join('') + '</ol>' + LEGEND + '</section>';
+    h += '<section class="blk"><div class="blk-h"><h3>' + ic('users') + 'Siapa yang memakai?</h3><p class="hint">Titik = aplikasi memakai fungsi itu. Klik nama untuk detail.<span class="only-phone"> Geser tabel ke kanan →</span></p></div>' + flowMatrix(f.code) + '</section>';
+    var rows = '';
+    f.steps.forEach(function (st, i) {
+      st.items.forEach(function (it) {
+        var o = OPS[it.id];
+        rows += '<tr>' + td('Langkah', String(i + 1)) + td('Nama fungsi', esc(o.name) + (it.shared ? ' <span class="hint">(dari ' + o.flow + ')</span>' : '')) + td('Sistem', sysPill(o.sys)) +
+          td('API name', mono(o.api)) + td('Versi', mono(o.ver)) + td('Operation', mono(o.op)) + td('Sistem pemroses', esc(o.backend)) + td('Alamat teknis', mono(o.endpoint, true)) + td('Aplikasi', esc(appNames(o.apps))) + '</tr>';
+      });
+    });
+    h += '<div class="mores">' +
+      more('bulb', 'Contoh cerita', '<p class="story">' + esc(f.story) + '</p>') +
+      more('info', 'Yang perlu diketahui', '<ul>' + f.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>') +
+      more('wrench', 'Detail teknis (untuk tim IT)', '<ul>' + f.tech.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul><div class="tablewrap"><table class="t stackable">' +
+        thead(['Langkah', 'Nama fungsi', 'Sistem', 'API name', 'Versi', 'Operation', 'Sistem pemroses', 'Alamat teknis', 'Aplikasi']) + '<tbody>' + rows + '</tbody></table></div>') +
+      '</div>';
+    document.getElementById('v-alur').innerHTML = h;
+    var pk = document.getElementById('picker'), cur = pk.querySelector('[aria-current="true"]');
+    if (cur && pk.scrollWidth > pk.clientWidth) {
+      var pr = pk.getBoundingClientRect(), cr = cur.getBoundingClientRect();
+      if (cr.left < pr.left || cr.right > pr.right) pk.scrollLeft += cr.left - pr.left - (pr.width - cr.width) / 2;
+    }
+  }
+
+  /* ---------- Aplikasi ---------- */
+  function bsize(n) { return n >= 8 ? 26 : n >= 5 ? 21 : n >= 3 ? 17 : n === 2 ? 13 : 10; }
+  function renderAplikasi() {
+    var cnt = {}; APPS.forEach(function (a) { var c = catOf(a); cnt[c] = (cnt[c] || 0) + 1; });
+    var chips = '<button class="cat" data-cat="" aria-pressed="true">Semua <b>' + APPS.length + '</b></button>' +
+      CAT_ORDER.filter(function (c) { return cnt[c]; }).map(function (c) { return '<button class="cat" data-cat="' + c + '" aria-pressed="false">' + ic(CATS[c].ic) + esc(CATS[c].l) + ' <b>' + cnt[c] + '</b></button>'; }).join('');
+    document.getElementById('v-aplikasi').innerHTML =
+      '<div class="blk-h"><h2>Aplikasi pemakai</h2><p class="hint">Bulatan = aplikasi memakai fungsi di alur itu. Makin besar, makin banyak fungsinya. Klik untuk detail.</p></div>' +
+      '<div class="toolbar"><label class="search">' + ic('search') + '<input type="search" id="appq" placeholder="Cari aplikasi, mis. BOS" autocomplete="off" aria-label="Cari aplikasi"></label>' +
+      '<div class="cats" role="group" aria-label="Jenis aplikasi">' + chips + '</div></div>' +
+      '<div class="legend"><span class="sizes"><i style="width:10px;height:10px"></i><i style="width:17px;height:17px"></i><i style="width:26px;height:26px"></i></span><span>1 · 3 · 8+ fungsi</span>' +
+      '<span><i class="dot baru"></i>Sistem baru</span><span><i class="dot lama"></i>Sistem lama</span><span><i class="dot lain"></i>Lainnya</span><span class="only-phone">Geser tabel ke kanan →</span></div>' +
+      '<div id="amx"></div>';
+    var inp = document.getElementById('appq');
+    inp.value = state.appq;
+    inp.addEventListener('input', function () { state.appq = inp.value; renderAppMatrix(); });
+    renderAppMatrix();
+  }
+  function renderAppMatrix() {
+    var q = state.appq.trim().toLowerCase();
+    var list = APPS.filter(function (a) {
+      return (!state.cat || catOf(a) === state.cat) && (!q || (a.name + ' ' + a.short + ' ' + a.desc + ' ' + CATS[catOf(a)].l).toLowerCase().indexOf(q) > -1);
+    });
+    if (!list.length) { document.getElementById('amx').innerHTML = '<p class="empty">Tidak ada aplikasi yang cocok.</p>'; return; }
+    var h = '<div class="mx-wrap"><table class="mx amx"><thead><tr><th class="rh" scope="col"><span class="hint">Aplikasi ↓ &nbsp;·&nbsp; Alur →</span></th>' +
+      D.flows.map(function (f) { return '<th scope="col"><button class="chb" data-flow="' + f.code + '" title="' + esc(f.code + ' · ' + f.name) + '">' + flowIc(f.code, 's') + '<span class="cc">' + f.code + '</span></button></th>'; }).join('') + '</tr></thead><tbody>';
+    [['internal', 'Aplikasi internal'], ['mitra', 'Perusahaan mitra (Open API SNAP)']].forEach(function (g) {
+      var rows = list.filter(function (a) { return a.group === g[0]; }).sort(function (x, y) { return y.uses.length - x.uses.length || x.id - y.id; });
+      if (!rows.length) return;
+      h += '<tr class="grp"><th class="rh" colspan="' + (D.flows.length + 1) + '">' + g[1] + ' · ' + rows.length + '</th></tr>';
+      rows.forEach(function (a) {
+        var fc = APP_FC[a.id];
+        h += '<tr><th scope="row" class="rh"><button class="rhb" data-app="' + a.id + '" title="' + esc(a.name) + '">' + appIc(a, 's') + '<span class="rn">' + esc(a.name) + '</span><span class="rs">' + esc(a.short) + '</span><span class="cnt">' + a.uses.length + '</span></button></th>' +
+          D.flows.map(function (f) {
+            var c = fc[f.code];
+            if (!c) return '<td></td>';
+            var sz = bsize(c.n);
+            return '<td class="on"><button class="bb" data-app="' + a.id + '" style="width:' + sz + 'px;height:' + sz + 'px;background:' + conic(c.baru, c.lama, c.lain) + '" title="' +
+              esc(a.name + ' · ' + f.code + ' ' + f.name + ': ' + c.n + ' fungsi (baru ' + c.baru + ', lama ' + c.lama + (c.lain ? ', lainnya ' + c.lain : '') + ')') + '" aria-label="' + esc(a.name + ', ' + f.name + ', ' + c.n + ' fungsi') + '"></button></td>';
+          }).join('') + '</tr>';
+      });
+    });
+    document.getElementById('amx').innerHTML = h + '</tbody></table></div>';
+  }
+
+  /* ---------- Cari ---------- */
+  var OP_IDS = Object.keys(OPS);
+  function resRow(id) {
+    var o = OPS[id];
+    return '<button class="res ' + o.sys + '" data-fn="' + id + '">' + flowIc(o.flow, 's') + '<span class="b"><span class="n">' + esc(o.name) + '</span>' +
+      '<span class="m"><span class="code">' + o.flow + '</span><span class="k"><i class="dot ' + o.sys + '"></i>' + SYSS[o.sys] + '</span><span class="k">' + ic('smartphone') + o.apps.length + '</span>' +
+      opLine(o) + '</span></span></button>';
+  }
+  function renderCariResults() {
+    var q = state.q.trim().toLowerCase();
+    var list = OP_IDS.filter(function (id) {
+      var o = OPS[id];
+      if (state.qflow && o.flow !== state.qflow) return false;
+      if (state.qsys && o.sys !== state.qsys) return false;
+      if (!q) return true;
+      var hay = (o.name + ' ' + o.expl + ' ' + o.api + ' ' + o.op + ' ' + o.backend + ' ' + FL[o.flow].name + ' ' + appNames(o.apps) + ' ' + o.apps.map(function (i) { return APPS[i].short; }).join(' ')).toLowerCase();
+      return q.split(/\s+/).every(function (w) { return hay.indexOf(w) > -1; });
+    });
+    document.getElementById('cariCount').textContent = list.length + ' dari ' + OP_IDS.length + ' fungsi (versi berbeda dihitung terpisah)';
+    document.getElementById('cariList').innerHTML = list.map(resRow).join('') || '<p class="empty">Belum ada yang cocok. Coba kata lain, atau hapus filter.</p>';
+  }
+  function renderCari() {
+    var opts = '<option value="">Semua alur</option>' + D.flows.map(function (f) { return '<option value="' + f.code + '">' + f.code + ' · ' + esc(f.name) + '</option>'; }).join('');
+    var seg = [['', 'Semua'], ['baru', 'Baru'], ['lama', 'Lama'], ['lain', 'Lainnya']].map(function (s) {
+      return '<button type="button" data-qsys="' + s[0] + '" aria-pressed="' + (state.qsys === s[0]) + '">' + (s[0] ? '<i class="dot ' + s[0] + '"></i>' : '') + s[1] + '</button>';
+    }).join('');
+    document.getElementById('v-cari').innerHTML =
+      '<div class="blk-h"><h2>Cari fungsi</h2><p class="hint">Ketik nama fungsi, nama teknis, atau nama aplikasi</p></div>' +
+      '<div class="controls"><label class="search">' + ic('search') + '<input type="search" id="q" placeholder="mis. saldo, deposito, getDetail, BOS" autocomplete="off" aria-label="Kata kunci"></label>' +
+      '<select id="qflow" aria-label="Filter alur">' + opts + '</select><div class="seg" role="group" aria-label="Filter sistem">' + seg + '</div></div>' +
+      '<p class="hint" id="cariCount" aria-live="polite"></p><div class="results" id="cariList"></div>';
+    var q = document.getElementById('q'), qf = document.getElementById('qflow');
+    q.value = state.q; qf.value = state.qflow;
+    q.addEventListener('input', function () { state.q = q.value; renderCariResults(); });
+    qf.addEventListener('change', function () { state.qflow = qf.value; renderCariResults(); });
+    renderCariResults();
+  }
+
+  /* ---------- Sistem ---------- */
+  var MIG_T = { 'account-deposito /createDeposito': 'Buka deposito', 'Account-Management /getStatementByDate': 'Mutasi per tanggal', 'Account-Management /getTodayStatement': 'Mutasi hari ini',
+    'Aktivasi rekening dormant': 'Aktifkan rekening tidur', 'Tahan / lepas dana': 'Tahan / lepas saldo', 'Rate deposito': 'Bunga deposito' };
+  var APP_BY = {}; APPS.forEach(function (a) { APP_BY[a.name.toLowerCase()] = a.id; APP_BY[a.short.toLowerCase()] = a.id; });
+  function migSide(cls, label, str) {
+    var p = str.split(' — '), tech = p[0], names = (p[1] || '').split(/,\s*/).filter(Boolean);
+    return '<div class="side ' + cls + '"><span class="sl"><i class="dot ' + (cls === 'old' ? 'lama' : 'baru') + '"></i>' + label + '</span><div class="achips">' +
+      names.map(function (n) { var id = APP_BY[n.toLowerCase()]; return id != null ? achip(id) : '<span class="achip">' + esc(n) + '</span>'; }).join('') + '</div>' +
+      '<span class="op tl" title="' + esc(tech) + '">' + esc(tech) + '</span></div>';
+  }
+  function hbRow(lblHtml, attr, b, l, o, max) {
+    var w = max ? (b + l + o) / max * 100 : 0;
+    return '<div class="hb"><button class="lbl" ' + attr + '>' + lblHtml + '</button><div class="sbar" style="width:' + w.toFixed(1) + '%" role="img" aria-label="Sistem baru ' + b + ', sistem lama ' + l + (o ? ', lainnya ' + o : '') + '">' +
+      '<i class="b" style="flex-grow:' + b + '"></i><i class="l" style="flex-grow:' + l + '"></i><i class="o" style="flex-grow:' + o + '"></i></div><span class="v">' + b + ' / ' + l + (o ? ' / ' + o : '') + '</span></div>';
+  }
+  function renderSistem() {
+    var h = '<div class="blk-h"><h2>Sistem baru vs lama</h2><p class="hint">Fungsi sedang dipindahkan dari sistem lama (SOA) ke sistem baru (microservice)</p></div>';
+    h += '<section class="card sys-hero"><div class="donut" style="background:conic-gradient(var(--baru) 0 ' + (T.baru / (T.baru + T.lama) * 100).toFixed(1) + '%,var(--lama) 0 100%)"><div><b>' + share + '%</b><span>sistem baru</span></div></div>' +
+      '<div class="sys-leg"><div><i class="dot lg baru"></i><b>' + T.baru + '</b>lewat sistem baru</div><div><i class="dot lg lama"></i><b>' + T.lama + '</b>lewat sistem lama</div>' +
+      '<div><i class="dot lg lain"></i><b>' + T.lain + '</b>lainnya</div><p class="hint">Angka = pemakaian (1 aplikasi memakai 1 fungsi)</p></div></section>';
+    var maxF = Math.max.apply(null, D.flows.map(function (f) { return f.stats.baru + f.stats.lama + f.stats.lain; }));
+    var fr = D.flows.map(function (f) { var s = f.stats; return hbRow(flowIc(f.code, 's') + '<span>' + esc(f.name) + '</span>', 'data-flow="' + f.code + '"', s.baru, s.lama, s.lain, maxF); }).join('');
+    var soaApps = APPS.filter(function (a) { return a.lama > 0; }).sort(function (x, y) { return y.lama - x.lama || (y.baru + y.lama) - (x.baru + x.lama); });
+    var maxA = Math.max.apply(null, soaApps.map(function (a) { return a.baru + a.lama + a.lain; }));
+    var ar = soaApps.map(function (a) { return hbRow(appIc(a, 's') + '<span>' + esc(a.name) + '</span>', 'data-app="' + a.id + '"', a.baru, a.lama, a.lain, maxA); }).join('');
+    h += '<div class="two"><section class="card blk"><div class="blk-h"><h3>' + ic('route') + 'Per alur</h3><p class="hint">Angka: baru / lama (/ lainnya)</p></div><div class="hbs">' + fr + '</div></section>' +
+      '<section class="card blk"><div class="blk-h"><h3>' + ic('alert') + soaApps.length + ' aplikasi masih memakai sistem lama</h3><p class="hint">Angka: baru / lama (/ lainnya)</p></div><div class="hbs">' + ar + '</div></section></div>';
+    h += '<section class="blk"><div class="blk-h"><h3>' + ic('swap') + 'Jalur lama dan baru yang masih dipakai bersamaan</h3><p class="hint">Jalur lama baru bisa dimatikan setelah tidak ada aplikasi yang memakainya</p></div><div class="migs">' + D.migration.map(function (m) {
+      var title = MIG_T[m[1]] || m[1], techTitle = m[1].indexOf('/') > -1 ? m[1] : '';
+      return '<div class="mig"><div class="mh"><h4>' + esc(title) + '</h4><span class="tagk">' + (m[0].indexOf('Versi') === 0 ? 'Beda versi' : 'API beda · dugaan') + '</span></div>' +
+        (techTitle ? '<span class="op tl">' + esc(techTitle) + '</span>' : '') +
+        migSide('old', 'Jalur lama', m[2]) + '<div class="arr">' + ic('arrowRight') + '</div>' + migSide('new', 'Jalur baru', m[3]) + (m[4] ? '<small>' + esc(m[4]) + '</small>' : '') + '</div>';
+    }).join('') + '</div></section>';
+    h += '<section class="blk"><div class="blk-h"><h3>' + ic('archive') + D.soaOnly.length + ' fungsi hanya ada di sistem lama</h3><p class="hint">Belum punya versi sistem baru. Klik untuk detail.</p></div><div class="fchips">' +
+      D.soaOnly.map(function (id) { var o = OPS[id]; return '<button class="fchip ' + o.sys + '" data-fn="' + id + '"><span class="code">' + o.flow + '</span>' + esc(o.name) + opLine(o) + '</button>'; }).join('') + '</div></section>';
+    h += more('wrench', 'Sistem pemroses (backend), untuk tim IT', '<div class="tablewrap"><table class="t stackable">' + thead(['Sistem', 'Jenis', 'Alamat (host)', 'Kepemilikan', '#Pemakaian', '#Aplikasi', '#Fungsi', 'Catatan']) + '<tbody>' +
+      D.backends.map(function (b) { return '<tr>' + td('Sistem', mono(b.name)) + td('Jenis', esc(b.kind)) + td('Alamat (host)', mono(b.host, true)) + td('Kepemilikan', esc(b.owner)) + td('Pemakaian', String(b.uses), 'num') + td('Aplikasi', String(b.apps), 'num') + td('Fungsi', String(b.fns), 'num') + td('Catatan', esc(b.note)) + '</tr>'; }).join('') +
+      '</tbody></table></div>');
+    document.getElementById('v-sistem').innerHTML = h;
+  }
+
+  /* ---------- Kamus ---------- */
+  var TIC = {
+    'Aplikasi (channel)': 'smartphone', 'API': 'plug', 'Fungsi API (operation)': 'code', 'Versi API': 'tag', 'API Gateway': 'door', 'MW Account (Middleware Account)': 'layers',
+    'Sistem baru (microservice / MS)': 'server|baru', 'Sistem lama (SOA)': 'server|lama', 'Sistem inti bank (core banking)': 'database', 'Jalur lama / jalur baru': 'swap',
+    'Pemakaian': 'link', 'Dampak (blast radius)': 'target', 'Alur (user flow)': 'route', 'CIF': 'idCard', 'KYC': 'userCheck', 'Pemilik dana sebenarnya (beneficial owner)': 'userCheck',
+    'Persetujuan (consent)': 'checkSquare', 'Rekening tidur (dormant)': 'moon', 'Tahan saldo (lock / hold)': 'lock', 'Blokir rekening': 'ban', 'Mutasi': 'receipt', 'Portofolio': 'pie',
+    'Deposito': 'piggy', 'Tabungan berencana': 'calendar', 'Cairkan lebih awal (break)': 'coins', 'Standing order': 'repeat', 'RDN': 'trending', 'SNAP': 'plug',
+    'Perusahaan mitra (B2B)': 'building', 'RM': 'user', 'Konvensional / syariah': 'landmark', 'Akhir hari / akhir bulan (EOD / EOM)': 'calendar', 'sys:defaultApplication': 'help',
+    'Info teknis: endpoint / native URL': 'link', 'Info teknis: backend': 'server', 'Info teknis: legacy': 'archive'
+  };
+  function renderKamusList() {
+    var q = state.kq.trim().toLowerCase();
+    var list = D.glossary.filter(function (g) { return !q || (g.term + ' ' + g.arti + ' ' + g.ana).toLowerCase().indexOf(q) > -1; });
+    document.getElementById('glossList').innerHTML = list.map(function (g) {
+      var t = (TIC[g.term] || 'book').split('|');
+      return '<div class="term"><span class="bub m' + (t[1] ? ' ' + t[1] : '') + '">' + ic(t[0]) + '</span><div class="b"><h4>' + esc(g.term) + '</h4><p>' + esc(g.arti) + '</p>' +
+        (g.ana ? '<p class="an">' + ic('utensils') + '<span>' + esc(g.ana) + '</span></p>' : '') + '</div></div>';
+    }).join('') || '<p class="empty">Istilah tidak ditemukan.</p>';
+  }
+  function renderKamus() {
+    document.getElementById('v-kamus').innerHTML = '<div class="blk-h"><h2>Kamus istilah</h2><p class="hint">' + D.glossary.length + ' istilah yang sering muncul</p></div>' +
+      '<label class="search">' + ic('search') + '<input type="search" id="kq" placeholder="mis. CIF, dormant, SNAP" autocomplete="off" aria-label="Cari istilah"></label><div class="gloss" id="glossList"></div>';
+    var k = document.getElementById('kq');
+    k.addEventListener('input', function () { state.kq = k.value; renderKamusList(); });
+    renderKamusList();
+  }
+
+  /* ---------- Catatan tim ---------- */
+  function renderCatatan() {
+    var h = '<div class="blk-h"><h2>Catatan tim</h2><p class="hint">Untuk tim yang menindaklanjuti. API kandidat tidak dihitung di ringkasan mana pun.</p></div><div class="secs">';
+    h += '<section class="blk"><h3>' + ic('help') + D.candidates.length + ' API yang belum pasti milik MW Account</h3><div class="tablewrap"><table class="t stackable">' + thead(['Kemungkinan', 'Aplikasi', 'API name', 'Operation', 'Sistem', 'Dasar dugaan', 'Rekomendasi', 'Alur terkait']) + '<tbody>' +
+      D.candidates.map(function (c) { return '<tr>' + td('Kemungkinan', '<span class="sp ' + (c[0] === 'Tinggi' ? 'lama' : 'lain') + '"><i class="dot ' + (c[0] === 'Tinggi' ? 'lama' : 'lain') + '"></i>' + esc(c[0]) + '</span>') + td('Aplikasi', esc(c[1])) + td('API name', mono(c[2] + ' ' + c[3])) + td('Operation', mono(c[4])) + td('Sistem', esc(c[5])) + td('Dasar dugaan', esc(c[7])) + td('Rekomendasi', esc(c[8])) + td('Alur terkait', esc(c[9])) + '</tr>'; }).join('') +
+      '</tbody></table></div></section>';
+    h += '<section class="blk"><h3>' + ic('clipboard') + 'Koreksi dan isu</h3><div class="tablewrap"><table class="t stackable">' + thead(['Status', 'Temuan', 'Tindakan']) + '<tbody>' +
+      D.issues.map(function (i) { var ok = i[0].indexOf('Dikoreksi') === 0; return '<tr>' + td('Status', '<span class="sp ' + (ok ? 'baru' : 'lama') + '">' + ic(ok ? 'check' : 'alert') + esc(i[0]) + '</span>') + td('Temuan', esc(i[1])) + td('Tindakan', esc(i[2])) + '</tr>'; }).join('') +
+      '</tbody></table></div></section></div>';
+    document.getElementById('v-catatan').innerHTML = h;
+  }
+
+  /* ---------- Dialog fungsi / aplikasi ---------- */
+  var dlg = document.getElementById('dlg'), stack = [];
+  var X = '<button class="x" type="button" data-close aria-label="Tutup">' + ic('x') + '</button>';
+  function achip(i) { var a = APPS[i]; return '<button class="achip" data-app="' + i + '">' + appIc(a, 's') + esc(a.name) + '</button>'; }
+  function fchipFlow(c) { return '<button class="achip" data-flow="' + c + '">' + flowIc(c, 's') + esc(FL[c].name) + '</button>'; }
+  function dt(k, v) { return '<dt>' + esc(k) + '</dt><dd>' + v + '</dd>'; }
+  function fnBody(id) {
+    var o = OPS[id];
+    return '<div class="dlg-h">' + flowIc(o.flow, 'm') + '<div class="t"><div class="row"><span class="code">' + o.flow + '</span>' + sysPill(o.sys) + '</div><h3 id="dlgTitle">' + esc(o.name) + '</h3></div>' + X + '</div>' +
+      '<div class="techrow"><span class="k-op"><em>Operation</em><code>' + esc(o.op) + '</code></span><span><em>API</em><code>' + esc(o.api) + '</code></span><span><em>Versi</em><code>' + esc(o.ver) + '</code></span></div>' +
+      '<p class="lead">' + esc(o.expl) + '</p>' +
+      '<div class="sec"><p class="lab">Dipakai ' + o.apps.length + ' aplikasi</p><div class="achips">' + o.apps.map(achip).join('') + '</div></div>' +
+      '<div class="sec"><p class="lab">Alur</p><div class="achips">' + [o.flow].concat(o.related || []).map(fchipFlow).join('') + '</div></div>' +
+      more('wrench', 'Detail teknis lain (host, alamat, parameter)', '<dl class="tech">' +
+        dt('Diproses oleh', esc(o.bePlain) + (o.backend !== o.bePlain ? ' <span class="hint">(' + esc(o.backend) + ')</span>' : '')) + dt('Host', mono(o.host)) + dt('Alamat teknis', mono(o.endpoint)) +
+        (o.params ? dt('Parameter', mono(o.params)) : '') + dt('Kategori (workbook asal)', esc(o.cat)) + (o.note ? dt('Catatan', esc(o.note)) : '') + '</dl>');
+  }
+  function appBody(id) {
+    var a = APPS[id], tot = a.baru + a.lama + a.lain, c = catOf(a);
+    var h = '<div class="dlg-h">' + appIc(a, 'm') + '<div class="t"><div class="row"><span class="chip">' + ic(CATS[c].ic) + esc(CATS[c].l) + '</span></div><h3 id="dlgTitle">' + esc(a.name) + '</h3></div>' + X + '</div>' +
+      '<p class="lead">' + esc(a.desc) + '</p>' +
+      '<div class="kpis"><div><b>' + a.uses.length + '</b><span>fungsi dipakai</span></div><div><b>' + a.flows.length + '</b><span>alur</span></div><div><b>' + pct(a.baru, tot) + '%</b><span>lewat sistem baru</span></div>' +
+      (a.traffic ? '<div><b>' + (a.traffic / T.traffic * 100).toLocaleString('id-ID', { maximumFractionDigits: a.traffic / T.traffic < 0.01 ? 2 : 1 }) + '%</b><span>lalu lintas gateway</span></div>' : '') + '</div>' +
+      mbar(a.baru, a.lama, a.lain);
+    a.flows.forEach(function (fc) {
+      var ids = a.uses.filter(function (x) { return OPS[x].flow === fc; });
+      h += '<div class="sec"><button class="fhd" data-flow="' + fc + '">' + flowIc(fc, 's') + esc(FL[fc].name) + ' <span class="n">· ' + ids.length + '</span></button><div class="fchips">' +
+        ids.map(function (x) { var o = OPS[x]; return '<button class="fchip ' + o.sys + '" data-fn="' + x + '">' + esc(o.name) + opLine(o) + '</button>'; }).join('') + '</div></div>';
+    });
+    return h;
+  }
+  function renderDlg() {
+    var top = stack[stack.length - 1];
+    var body = (stack.length > 1 ? '<button class="back" type="button" data-back>' + ic('arrowLeft') + 'Kembali</button>' : '') + (top[0] === 'fn' ? fnBody(top[1]) : appBody(top[1]));
+    var el = document.getElementById('dlgBody');
+    el.innerHTML = body;
+    dlg.scrollTop = 0;
+  }
+  function openDlg(kind, id, push) {
+    if (!push) stack = [];
+    stack.push([kind, id]);
+    renderDlg();
+    if (!dlg.open) { if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', ''); }
+  }
+  function closeDlg() { stack = []; if (dlg.open) { if (typeof dlg.close === 'function') dlg.close(); else dlg.removeAttribute('open'); } }
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) closeDlg(); });
+  dlg.addEventListener('close', function () { stack = []; });
+
+  /* ---------- Navigasi ---------- */
+  var VIEWS = ['beranda', 'alur', 'aplikasi', 'cari', 'sistem', 'kamus', 'catatan'];
+  var tabsEl = document.querySelector('.tabs-in');
+  function tabsMore() { tabsEl.classList.toggle('more', tabsEl.scrollLeft + tabsEl.clientWidth < tabsEl.scrollWidth - 4); }
+  function revealTab(t) {
+    if (tabsEl.scrollWidth <= tabsEl.clientWidth) return;
+    var tr = t.getBoundingClientRect(), cr = tabsEl.getBoundingClientRect();
+    if (tr.left < cr.left) tabsEl.scrollLeft += tr.left - cr.left - 12;
+    else if (tr.right > cr.right - 40) tabsEl.scrollLeft += tr.right - cr.right + 52;
+  }
+  tabsEl.addEventListener('scroll', tabsMore, { passive: true });
+  window.addEventListener('resize', tabsMore);
+  function setHash(token) { try { history.replaceState(null, '', '#' + token); } catch (e) { /* abaikan */ } }
+  function show(tab, opts) {
+    state.tab = tab;
+    VIEWS.forEach(function (v) {
+      document.getElementById('v-' + v).hidden = v !== tab;
+      var t = document.getElementById('t-' + v);
+      t.setAttribute('aria-selected', String(v === tab));
+      t.tabIndex = v === tab ? 0 : -1;
+    });
+    revealTab(document.getElementById('t-' + tab)); tabsMore();
+    setHash(tab === 'alur' ? 'alur-' + state.flow : tab);
+    if (!(opts && opts.keepScroll)) window.scrollTo(0, 0);
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-tab],[data-flow],[data-app],[data-fn],[data-close],[data-back],[data-qsys],[data-cat]');
+    if (!el) return;
+    var inDlg = !!el.closest('dialog');
+    if (el.hasAttribute('data-close')) { closeDlg(); return; }
+    if (el.hasAttribute('data-back')) { stack.pop(); renderDlg(); return; }
+    if (el.hasAttribute('data-qsys')) {
+      state.qsys = el.getAttribute('data-qsys');
+      document.querySelectorAll('[data-qsys]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === el)); });
+      renderCariResults(); return;
+    }
+    if (el.hasAttribute('data-cat')) {
+      state.cat = el.getAttribute('data-cat');
+      document.querySelectorAll('[data-cat]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === el)); });
+      renderAppMatrix(); return;
+    }
+    if (el.hasAttribute('data-fn')) { openDlg('fn', el.getAttribute('data-fn'), inDlg); return; }
+    if (el.hasAttribute('data-app')) { openDlg('app', Number(el.getAttribute('data-app')), inDlg); return; }
+    if (el.hasAttribute('data-flow')) {
+      closeDlg();
+      state.flow = el.getAttribute('data-flow');
+      renderAlur(); show('alur');
+      return;
+    }
+    if (el.hasAttribute('data-tab')) { show(el.getAttribute('data-tab')); }
+  });
+  tabsEl.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    var i = VIEWS.indexOf(state.tab) + (e.key === 'ArrowRight' ? 1 : -1);
+    i = (i + VIEWS.length) % VIEWS.length;
+    show(VIEWS[i], { keepScroll: true });
+    document.getElementById('t-' + VIEWS[i]).focus();
+  });
+  function fromHash() {
+    var h = (location.hash || '').replace('#', ''), m;
+    if ((m = /^alur-(F\d{1,2})$/.exec(h)) && FL[m[1]]) { state.flow = m[1]; renderAlur(); return 'alur'; }
+    return VIEWS.indexOf(h) > -1 ? h : 'beranda';
+  }
+
+  document.querySelectorAll('[data-ic]').forEach(function (el) { el.outerHTML = ic(el.getAttribute('data-ic')); });
+  var opTog = document.getElementById('opTog');
+  opTog.addEventListener('click', function () {
+    var on = opTog.getAttribute('aria-checked') !== 'true';
+    opTog.setAttribute('aria-checked', String(on));
+    document.body.classList.toggle('no-op', !on);
+  });
+  renderBeranda(); renderAlur(); renderAplikasi(); renderCari(); renderSistem(); renderKamus(); renderCatatan();
+  show(fromHash(), { keepScroll: true });
+})();
+</script>
+
+</body></html>
